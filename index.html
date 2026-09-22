@@ -349,40 +349,62 @@ if('serviceWorker' in navigator){
 </script>
 
 
-// Hamburger menu logic
+
+
+<script>
+// Hamburger menu - file logos version
 (function(){
-  const menuBtn=document.getElementById('menuBtn');
-  const mobileMenu=document.getElementById('mobileMenu');
-  const syncBtn=document.getElementById('syncBtn');
-  const syncBtnMobile=document.getElementById('syncBtnMobile');
-  const syncStatus=document.getElementById('syncStatus');
-  const syncStatusMobile=document.getElementById('syncStatusMobile');
-  
-  if(menuBtn && mobileMenu){
-    menuBtn.onclick=(e)=>{ e.stopPropagation(); mobileMenu.classList.toggle('open'); };
-    document.addEventListener('click', (e)=>{
-      if(!mobileMenu.contains(e.target) && e.target!==menuBtn){ mobileMenu.classList.remove('open'); }
+  function initMenu(){
+    const menuBtn=document.getElementById('menuBtn');
+    const mobileMenu=document.getElementById('mobileMenu');
+    const syncBtn=document.getElementById('syncBtn');
+    const syncBtnMobile=document.getElementById('syncBtnMobile');
+    const syncStatus=document.getElementById('syncStatus');
+    const syncStatusMobile=document.getElementById('syncStatusMobile');
+    
+    if(!menuBtn || !mobileMenu){ console.log('menu elements not found'); return; }
+    
+    menuBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      mobileMenu.classList.toggle('open');
+      console.log('menu toggled', mobileMenu.classList.contains('open'));
     });
-  }
-  // Mirror sync buttons
-  if(syncBtn && syncBtnMobile){
-    syncBtnMobile.onclick=()=>{ syncBtn.click(); };
-    // Observe syncBtn text changes
-    const observer=new MutationObserver(()=>{
-      syncBtnMobile.textContent=syncBtn.textContent;
+    
+    document.addEventListener('click', function(e){
+      if(mobileMenu.classList.contains('open') && !mobileMenu.contains(e.target) && e.target!==menuBtn){
+        mobileMenu.classList.remove('open');
+      }
     });
-    observer.observe(syncBtn, {childList:true, characterData:true, subtree:true});
-    // Also observe status
-    if(syncStatus && syncStatusMobile){
-      const statusObserver=new MutationObserver(()=>{
-        syncStatusMobile.textContent=syncStatus.textContent;
+    
+    if(syncBtn && syncBtnMobile){
+      syncBtnMobile.addEventListener('click', function(){
+        mobileMenu.classList.remove('open');
+        syncBtn.click();
       });
-      statusObserver.observe(syncStatus, {childList:true, characterData:true, subtree:true});
-      // Initial sync
-      syncStatusMobile.textContent=syncStatus.textContent;
+      // Sync text mirroring
+      const updateMirror = ()=>{
+        syncBtnMobile.textContent = syncBtn.textContent;
+        if(syncStatus && syncStatusMobile){
+          syncStatusMobile.textContent = syncStatus.textContent;
+        }
+      };
+      // Initial
+      updateMirror();
+      // Observe changes
+      const obs = new MutationObserver(updateMirror);
+      if(syncBtn) obs.observe(syncBtn, {childList:true, characterData:true, subtree:true});
+      if(syncStatus) obs.observe(syncStatus, {childList:true, characterData:true, subtree:true});
+      // Also poll every second as fallback
+      setInterval(updateMirror, 1000);
     }
   }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', initMenu);
+  } else {
+    initMenu();
+  }
 })();
+</script>
 
 <script type="module">
 // Safe Firebase loader - won't crash app if it fails
