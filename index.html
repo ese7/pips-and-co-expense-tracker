@@ -114,6 +114,12 @@ footer a:hover{color:var(--text);text-decoration-color:var(--text);text-decorati
 .faceid-icon{width:72px;height:72px;border-radius:50%;background:var(--bg2);border:1px solid var(--border-dark);display:grid;place-items:center;font-size:32px}
 html.light .faceid-icon{border-color:var(--border)}
 
+/* PWA - disable logo link */
+@media (display-mode: standalone){
+  .logo-link{pointer-events:none;cursor:default;}
+}
+.pwa .logo-link{pointer-events:none;cursor:default;}
+
 /* Hamburger + mobile */
 .hamburger-btn{display:none;width:36px;height:36px;border-radius:50%;border:1px solid var(--border-dark);background:var(--bg2);cursor:pointer;color:var(--text);font-size:18px;align-items:center;justify-content:center}
 html.light .hamburger-btn{border-color:var(--border)}
@@ -467,6 +473,28 @@ if('serviceWorker' in navigator){
 </div>
 
 <script>
+// Disable logo link in PWA only
+(function(){
+  function isPWA(){
+    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true || document.referrer.includes('android-app://');
+  }
+  function disableLogoLink(){
+    if(isPWA()){
+      document.documentElement.classList.add('pwa');
+      let logoLink=document.querySelector('.logo-link');
+      if(logoLink){
+        logoLink.addEventListener('click', function(e){ e.preventDefault(); });
+        logoLink.removeAttribute('href');
+        logoLink.style.pointerEvents='none';
+        logoLink.style.cursor='default';
+      }
+    }
+  }
+  document.addEventListener('DOMContentLoaded', disableLogoLink);
+  // Also check on load for iOS
+  if(isPWA()){ document.documentElement.classList.add('pwa'); }
+})();
+
 // Hamburger menu logic - FIXED with proper script tag
 document.addEventListener('DOMContentLoaded', function(){
   const menuBtn=document.getElementById('menuBtn');
