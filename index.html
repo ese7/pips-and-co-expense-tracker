@@ -246,7 +246,13 @@ function getDue(tpl,mStr){
   if(rec==="semiannually"){ if(diff%6!==0) return null; return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
   return new Date(y,m,Math.min(due.getDate(),dim(y,m)));
 }
-function earliest(){let ms=payments.map(p=>p.month).filter(Boolean).concat(templates.map(t=>t.createdAt?.slice(0,7)).filter(Boolean)); if(ms.length===0) return curM(); return ms.reduce((a,b)=>a<b?a:b,ms[0])}
+function earliest(){
+  let ms=payments.map(p=>p.month).filter(Boolean)
+    .concat(templates.map(t=>t.createdAt?.slice(0,7)).filter(Boolean))
+    .concat(templates.map(t=>t.dueDate?.slice(0,7)).filter(Boolean));
+  if(ms.length===0) return curM();
+  return ms.reduce((a,b)=>a<b?a:b,ms[0]);
+}
 function latest(){return addM(curM(),12)}
 function renderTotals(){
  let dated=[], nodue=[], archive=[];
@@ -256,9 +262,17 @@ function renderTotals(){
    let createdM = t.createdAt ? t.createdAt.slice(0,7) : null;
    // Only hide no-due items that were created after activeMonth
    if(!t.dueDate && createdM && createdM > activeMonth) return;
-   if(!t.dueDate){ nodue.push({tpl:t,paid:isPaid(t.id,activeMonth),amt:dispAmt(t,activeMonth)}); return;}
+   if(!t.dueDate){
+     // Check for single-entry name override
+     let pay=findPay(t.id,activeMonth);
+     let displayTpl = pay?.snapshotName ? {...t, name:pay.snapshotName, category:pay.snapshotCategory||t.category, notes:pay.snapshotNotes||t.notes} : t;
+     nodue.push({tpl:displayTpl,paid:isPaid(t.id,activeMonth),amt:dispAmt(t,activeMonth)});
+     return;
+   }
    let due=getDue(t,activeMonth); if(!due) return;
-   dated.push({tpl:t,due,paid:isPaid(t.id,activeMonth),amt:dispAmt(t,activeMonth)});
+   let pay=findPay(t.id,activeMonth);
+   let displayTpl = pay?.snapshotName ? {...t, name:pay.snapshotName, category:pay.snapshotCategory||t.category, notes:pay.snapshotNotes||t.notes} : t;
+   dated.push({tpl:displayTpl,due,paid:isPaid(t.id,activeMonth),amt:dispAmt(t,activeMonth)});
  });
  // Keep archive for deleted templates
  payments.filter(p=>p.month===activeMonth).forEach(p=>{
@@ -372,7 +386,26 @@ function togglePaid(tid){
 }
 function deleteTpl(id){ if(!confirm("Delete? Past payments preserved.")) return; templates=templates.filter(t=>t.id!==id); save(); renderAll(); }
 function openNew(){ editId=null; document.getElementById("modalTitle").textContent="New Expense"; document.getElementById("f_name").value=""; document.getElementById("f_amount").value=""; document.getElementById("f_due").value=""; document.getElementById("f_rec").value="monthly"; document.getElementById("f_cat").value=cats[0]||"Other"; document.getElementById("f_newcat").value=""; document.getElementById("f_notes").value=""; document.getElementById("editBackdrop").classList.add("open"); }
-function openEdit(id){let t=templates.find(x=>x.id===id); if(!t) return; editId=id; document.getElementById("modalTitle").textContent="Edit Expense"; document.getElementById("f_name").value=t.name; document.getElementById("f_amount").value=t.amount; document.getElementById("f_due").value=t.dueDate||""; document.getElementById("f_rec").value=t.recurrence; document.getElementById("f_cat").value=t.category; document.getElementById("f_notes").value=t.notes||""; document.getElementById("editBackdrop").classList.add("open");}
+function openEdit(id){
+  let t=templates.find(x=>x.id===id); if(!t) return;
+  editId=id;
+  let pay=findPay(id,activeMonth);
+  // For single-entry overrides, show the occurrence's values, not just template
+  let nameVal = pay?.snapshotName || t.name;
+  let amountVal = (pay && pay.amount!=null) ? pay.amount : t.amount;
+  let dueVal = t.dueDate||"";
+  let recVal = t.recurrence;
+  let catVal = pay?.snapshotCategory || t.category;
+  let notesVal = pay?.snapshotNotes || pay?.notes || t.notes || "";
+  document.getElementById("modalTitle").textContent="Edit Expense";
+  document.getElementById("f_name").value=nameVal;
+  document.getElementById("f_amount").value=amountVal;
+  document.getElementById("f_due").value=dueVal;
+  document.getElementById("f_rec").value=recVal;
+  document.getElementById("f_cat").value=catVal;
+  document.getElementById("f_notes").value=notesVal;
+  document.getElementById("editBackdrop").classList.add("open");
+}
 function commitSave(data,scope){
  let {name,amount,dueDate,recurrence,category,notes}=data;
  if(!editId){ const t={id:uid(),name,amount,dueDate:dueDate||null,recurrence,category,createdAt:new Date().toISOString()}; if(notes) t.notes=notes; templates.push(t); return; }
@@ -381,7 +414,13 @@ function commitSave(data,scope){
   templates=templates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
   if(scope==="all"){ payments=payments.map(p=> p.templateId===editId? {...p,snapshotName:name,snapshotCategory:category}:p); } 
  } else if(scope==="single"){
-  let ex=findPay(editId,activeMonth); if(ex){ payments=payments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category}:p); } else { payments.push({id:uid(),templateId:editId,month:activeMonth,amount,paidAt:new Date().toISOString(),paid:false,snapshotName:name,snapshotCategory:category}); }
+  let ex=findPay(editId,activeMonth);
+  // Preserve amount, name, category, notes for this single occurrence
+  if(ex){
+    payments=payments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes:notes}:p);
+  } else {
+    payments.push({id:uid(),templateId:editId,month:activeMonth,amount,paidAt:new Date().toISOString(),paid:false,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes:notes});
+  }
  } else if(scope==="forward"){
   templates=templates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
   payments=payments.map(p=>{ if(p.templateId!==editId) return p; if(p.month>=activeMonth){ return {...p,amount: p.amount!=null? amount: p.amount, snapshotName:name,snapshotCategory:category}; } return p; });
