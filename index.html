@@ -50,6 +50,8 @@ html.light .badge{border-color:var(--border)}
 html.light .badge-amber{background:rgba(251,191,36,0.16);border-color:rgba(251,191,36,0.4);color:#92400e}
 .badge-red{background:rgba(248,113,113,0.12);border-color:rgba(248,113,113,0.35);color:#fca5a5;font-weight:600}
 html.light .badge-red{background:rgba(254,226,226,0.8);border-color:rgba(239,68,68,0.3);color:#991b1b}
+.badge-green{background:rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.35);color:#6ee7b7;font-weight:600}
+html.light .badge-green{background:rgba(209,250,229,0.8);border-color:rgba(16,185,129,0.4);color:#065f46}
 .grid3{display:grid;grid-template-columns:1fr;gap:12px}
 @media(min-width:640px){.grid3{grid-template-columns:repeat(3,1fr)}}
 .totals-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-weight:600}
@@ -106,21 +108,10 @@ footer a:hover{color:var(--text);text-decoration-color:var(--text);text-decorati
 @media(max-width:1023px){.row{flex-direction:column !important}.row>main{order:1 !important;width:100% !important}.row>aside{order:2 !important;width:100% !important}.grid3{grid-template-columns:repeat(3,1fr) !important;gap:8px !important}.totals-value{font-size:15px !important}}
 @media(min-width:375px) and (max-width:639px){.totals-value{font-size:17px !important}}
 #prevBtn:disabled,#nextBtn:disabled{opacity:0.35;cursor:not-allowed}
-
-
-/* Face ID lock overlay */
 .faceid-overlay{position:fixed;inset:0;z-index:100;background:var(--bg);display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:24px;text-align:center}
 .faceid-overlay.open{display:flex}
 .faceid-icon{width:72px;height:72px;border-radius:50%;background:var(--bg2);border:1px solid var(--border-dark);display:grid;place-items:center;font-size:32px}
 html.light .faceid-icon{border-color:var(--border)}
-
-/* PWA - disable logo link */
-@media (display-mode: standalone){
-  .logo-link{pointer-events:none;cursor:default;}
-}
-.pwa .logo-link{pointer-events:none;cursor:default;}
-
-/* Hamburger + mobile */
 .hamburger-btn{display:none;width:36px;height:36px;border-radius:50%;border:1px solid var(--border-dark);background:var(--bg2);cursor:pointer;color:var(--text);font-size:18px;align-items:center;justify-content:center}
 html.light .hamburger-btn{border-color:var(--border)}
 .mobile-menu{display:none;position:absolute;top:100%;right:16px;z-index:40;width:260px;background:var(--card);border:1px solid var(--border-dark);border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,.4);padding:12px;flex-direction:column;gap:10px}
@@ -140,7 +131,23 @@ html.light .mobile-menu .menu-section{border-color:var(--border)}
 @media(min-width:768px){
   .mobile-menu{display:none !important}
 }
-
+@media (display-mode: standalone){ .logo-link{pointer-events:none;cursor:default;} }
+.pwa .logo-link{pointer-events:none;cursor:default;}
+/* Phase 2: Income/Expense Toggle */
+.type-toggle{display:flex;gap:8px;margin-bottom:14px;background:var(--bg2);border:1px solid var(--border-dark);border-radius:9999px;padding:4px;width:fit-content}
+html.light .type-toggle{border-color:var(--border)}
+.type-toggle button{border:none;background:transparent;color:var(--muted);padding:6px 16px;border-radius:9999px;font-size:12px;font-weight:600;cursor:pointer;transition:.15s}
+.type-toggle button.active{background:var(--text);color:var(--bg)}
+html.light .type-toggle button.active{background:#111827;color:#fff}
+.type-toggle button.income.active{background:#10b981;color:#fff}
+.type-toggle button.expense.active{background:#ef4444;color:#fff}
+html.light .type-toggle button.income.active{background:#059669}
+html.light .type-toggle button.expense.active{background:#dc2626}
+/* Mobile: first total card full width */
+@media(max-width:639px){
+  #totalsGrid{grid-template-columns:1fr 1fr !important}
+  #totalsGrid .card:first-child{grid-column:1 / -1}
+}
 </style>
 <script src="./firebase-config.js"></script>
 </head>
@@ -156,7 +163,7 @@ html.light .mobile-menu .menu-section{border-color:var(--border)}
 <div class="subtitle">A simple, powerful recurring expense and budget tracker</div>
 </div>
 <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
-<button id="syncBtn" class="btn btn-ghost" style="font-size:11px">☁️ Sign in</button>
+<button id="syncBtn" class="btn btn-ghost" style="font-size:11px">☁ Sign in</button>
 <span id="syncStatus" style="font-size:10px;color:var(--muted);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
 <button id="themeBtn" class="theme-btn" aria-label="Toggle theme"></button>
 <button id="newBtn" class="btn btn-primary"><span style="font-size:14px;line-height:1">+</span> <span class="hide-mobile">New Expense</span><span class="show-mobile">New</span></button>
@@ -166,7 +173,7 @@ html.light .mobile-menu .menu-section{border-color:var(--border)}
 <div class="menu-section">
 <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:8px">Cloud Sync</div>
 <div style="display:flex;flex-direction:column;gap:8px">
-<button id="syncBtnMobile" class="btn btn-ghost" style="width:100%;justify-content:center">☁️ Sign in</button>
+<button id="syncBtnMobile" class="btn btn-ghost" style="width:100%;justify-content:center">☁ Sign in</button>
 <div id="syncStatusMobile" style="font-size:10px;color:var(--muted);text-align:center">Local only</div>
 <div id="syncDateMobile" style="font-size:9px;color:var(--muted);text-align:center;opacity:0.7"></div>
 </div>
@@ -184,11 +191,11 @@ html.light .mobile-menu .menu-section{border-color:var(--border)}
 </div></div>
 </header>
 
-
 <div class="container" style="padding-top:18px;padding-bottom:18px">
 <div class="row" style="align-items:flex-start">
 <aside><div class="card"><div class="pill">Categories</div><div id="catFilters" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"></div><div class="pill">Spending by Category</div><div id="pieWrap" style="text-align:center"></div><div id="pieLegend" style="margin-top:10px"></div><div style="border-top:1px solid var(--border-dark);margin-top:14px;padding-top:12px;display:flex;flex-direction:column;gap:7px"><div style="display:flex;gap:7px"><button id="exportBtn" class="btn btn-ghost" style="flex:1;font-size:10px;justify-content:center">Export JSON</button><button id="importBtn" class="btn btn-ghost" style="flex:1;font-size:10px;justify-content:center">Import JSON</button><input id="fileInput" type="file" accept=".json" style="display:none"></div><button id="clearBtn" class="btn btn-ghost" style="font-size:10px;justify-content:center">Clear All Data</button><div style="font-size:10px;color:var(--muted);line-height:1.4;margin-top:2px">Recurring items appear only for current month and forward.</div></div></div></aside>
 <main>
+<div class="type-toggle" id="typeToggle"><button id="expenseTabBtn" class="expense active">💸 Expense</button><button id="incomeTabBtn" class="income">💰 Income</button></div>
 <div class="grid3" id="totalsGrid" style="margin-bottom:18px"></div>
 <div class="card" style="margin-bottom:12px"><div class="month-nav"><button id="prevBtn" class="btn btn-ghost" style="font-size:11px">← Previous</button><div style="text-align:center;flex:1"><div id="monthTitle" style="font-weight:600;font-size:14px"></div><button id="jumpNow" style="font-size:10px;background:none;border:none;color:#60a5fa;text-decoration:underline;cursor:pointer;display:none;margin-top:2px">Jump to current month</button></div><button id="nextBtn" class="btn btn-ghost" style="font-size:11px">Next →</button></div></div><div id="mainContent"></div>
 </main>
@@ -197,18 +204,19 @@ html.light .mobile-menu .menu-section{border-color:var(--border)}
 
 <footer style="padding:18px 0;margin-top:18px;border-top:1px solid var(--border-dark)"><div class="container" style="text-align:center;font-size:11px;color:var(--muted)">Built with <span style="color:#ef4444">♥</span> by <a href="https://sitestars.net/" target="_blank">Sitestars</a></div></footer>
 
-<div id="editBackdrop" class="modal-backdrop"><div class="modal"><h3 id="modalTitle" style="margin:0 0 3px 0;font-size:15px;font-weight:600">New Expense</h3><div style="display:grid;gap:10px"><div><label>Name</label><input id="f_name" class="input" placeholder="e.g. Rent, Groceries"></div><div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;min-width:0"><div style="min-width:0"><label>Amount</label><input id="f_amount" class="input" type="number" step="0.01" placeholder="0.00"></div><div style="min-width:0"><label>Due date (optional)</label><input id="f_due" class="input" type="date"></div></div><div><label>Recurrence</label><select id="f_rec" class="input"><option value="none">None</option><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="yearly">Yearly</option><option value="quarterly">Quarterly</option><option value="semiannually">Semi-annually</option></select></div><div><label>Category</label><select id="f_cat" class="input"></select><div style="display:flex;gap:6px;margin-top:6px"><input id="f_newcat" class="input" placeholder="New category" style="flex:1"><button id="addCatBtn" class="btn btn-ghost">Add</button></div></div><div><label>Notes (optional)</label><input id="f_notes" class="input" placeholder="Optional notes"></div></div><div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="cancelEdit" class="btn btn-ghost">Cancel</button><button id="saveEdit" class="btn btn-primary">Save expense</button></div></div></div>
+<div id="editBackdrop" class="modal-backdrop"><div class="modal"><h3 id="modalTitle" style="margin:0 0 3px 0;font-size:15px;font-weight:600">New Expense</h3><div style="display:grid;gap:10px"><div><label>Name</label><input id="f_name" class="input" placeholder="e.g. Rent, Groceries"></div><div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;min-width:0"><div style="min-width:0"><label>Amount</label><input id="f_amount" class="input" type="number" step="0.01" placeholder="0.00"></div><div style="min-width:0"><label>Due date (optional)</label><input id="f_due" class="input" type="date"></div></div><div><label>Recurrence</label><select id="f_rec" class="input"><option value="none">None</option><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="yearly">Yearly</option><option value="quarterly">Quarterly</option><option value="semiannually">Semi-annually</option></select></div><div><label>Category</label><select id="f_cat" class="input"></select><div style="display:flex;gap:6px;margin-top:6px"><input id="f_newcat" class="input" placeholder="New category" style="flex:1"><button id="addCatBtn" class="btn btn-ghost">Add</button></div></div><div><label>Notes (optional)</label><input id="f_notes" class="input" placeholder="Optional notes"></div></div><div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="cancelEdit" class="btn btn-ghost">Cancel</button><button id="saveEdit" class="btn btn-primary">Save</button></div></div></div>
 
-<div id="scopeBackdrop" class="modal-backdrop" style="z-index:60"><div class="modal" style="max-width:440px"><h3 style="margin:0 0 4px 0;font-size:15px;font-weight:600">Edit recurring expense</h3><div id="scopeDesc" style="font-size:11px;color:var(--muted)"></div><div style="margin-top:10px"><div class="scope-opt selected" data-scope="single"><div class="dot"></div><div><div class="scope-title">This single entry</div><div class="scope-desc">Only this month will be changed.</div></div></div><div class="scope-opt" data-scope="forward"><div class="dot"></div><div><div class="scope-title">Current entry going forward</div><div class="scope-desc">This and all future months will use the new values.</div></div></div><div class="scope-opt" data-scope="all"><div class="dot"></div><div><div class="scope-title">All entries</div><div class="scope-desc">Every occurrence in the series will be updated.</div></div></div></div><div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="scopeCancel" class="btn btn-ghost">Cancel</button><button id="scopeApply" class="btn btn-primary">Apply</button></div></div></div>
+<div id="scopeBackdrop" class="modal-backdrop" style="z-index:60"><div class="modal" style="max-width:440px"><h3 style="margin:0 0 4px 0;font-size:15px;font-weight:600">Edit recurring</h3><div id="scopeDesc" style="font-size:11px;color:var(--muted)"></div><div style="margin-top:10px"><div class="scope-opt selected" data-scope="single"><div class="dot"></div><div><div class="scope-title">This single entry</div><div class="scope-desc">Only this month will be changed.</div></div></div><div class="scope-opt" data-scope="forward"><div class="dot"></div><div><div class="scope-title">Current entry going forward</div><div class="scope-desc">This and all future months will use the new values.</div></div></div><div class="scope-opt" data-scope="all"><div class="dot"></div><div><div class="scope-title">All entries</div><div class="scope-desc">Every occurrence in the series will be updated.</div></div></div></div><div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="scopeCancel" class="btn btn-ghost">Cancel</button><button id="scopeApply" class="btn btn-primary">Apply</button></div></div></div>
 
 <script>
-// CLEAN VERSION - NO BASE64, file logos only
 const LOGO_DARK = "./logo-white.png";
 const LOGO_LIGHT = "./logo-black.png";
 const STORAGE_KEY="pips-co-expense-tracker-data";
 const LEGACY=["pips-expense-data","pips-co-expense-final-data","pips-co-expense-tracker-data-v1","pips-co-expense-data","pips_co_expense_tracker_data","pips-co-expense-tracker-data-v2","pips-expense-tracker-data"];
-const DEFAULT_CATS=["Housing","Food","Transport","Bills","Loans","Family","Health","Other"];
-const COLORS={Housing:"#3b82f6",Food:"#10b981",Transport:"#f59e0b",Bills:"#8b5cf6",Loans:"#ef4444",Family:"#ec4899",Health:"#06b6d4",Other:"#6b7280"};
+const DEFAULT_EXPENSE_CATS=["Housing","Food","Transport","Bills","Loans","Family","Health","Other"];
+const DEFAULT_INCOME_CATS=["Salary","Freelance","Business","Investments","Rental","Bonus","Other Income"];
+const COLORS_EXP={Housing:"#3b82f6",Food:"#10b981",Transport:"#f59e0b",Bills:"#8b5cf6",Loans:"#ef4444",Family:"#ec4899",Health:"#06b6d4",Other:"#6b7280"};
+const COLORS_INC={Salary:"#10b981",Freelance:"#06b6d4",Business:"#8b5cf6",Investments:"#f59e0b",Rental:"#3b82f6",Bonus:"#ec4899","Other Income":"#6b7280"};
 const PAL=["#ec4899","#3b82f6","#ef4444","#06b6d4","#10b981","#f59e0b","#8b5cf6","#f97316","#84cc16","#a855f7","#14b8a6","#e11d48"];
 const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);
 const fmtM=(y,m)=>`${y}-${String(m+1).padStart(2,"0")}`;
@@ -219,21 +227,59 @@ const labelM=(s)=>{try{let {y,m}=parseM(s);return new Date(y,m,1).toLocaleDateSt
 const dim=(y,m)=>new Date(y,m+1,0).getDate();
 const parseD=(s)=>{let [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
 const today0=()=>{let d=new Date();d.setHours(0,0,0,0);return d};
-function load(){try{let r=localStorage.getItem(STORAGE_KEY); if(r){let j=JSON.parse(r); return j.data?j.data:j;} for(let k of LEGACY){let rr=localStorage.getItem(k); if(rr){let j=JSON.parse(rr); let d=j.data?j.data:j; if(d.templates||d.payments) return d;}}}catch{} return null;}
+
+function load(){
+  try{
+    let r=localStorage.getItem(STORAGE_KEY);
+    if(r){let j=JSON.parse(r); return j.data?j.data:j;}
+    for(let k of LEGACY){let rr=localStorage.getItem(k); if(rr){let j=JSON.parse(rr); let d=j.data?j.data:j; if(d.templates||d.expenseTemplates||d.payments) return d;}}
+  }catch{} return null;
+}
 let data=load();
-let templates=data?.templates||[];
-let payments=data?.payments||[];
-let cats=(()=>{if(data?.categories?.length){let s=new Set(data.categories); DEFAULT_CATS.forEach(c=>s.add(c)); return Array.from(s);} return DEFAULT_CATS.slice()})();
+
+// Expense data (backward compat)
+let expenseTemplates=data?.expenseTemplates||data?.templates||[];
+let expensePayments=data?.expensePayments||data?.payments||[];
+let expenseCats=(()=>{if(data?.expenseCategories?.length) return data.expenseCategories; if(data?.categories?.length){let s=new Set(data.categories); DEFAULT_EXPENSE_CATS.forEach(c=>s.add(c)); return Array.from(s);} return DEFAULT_EXPENSE_CATS.slice()})();
+
+// Income data
+let incomeTemplates=data?.incomeTemplates||[];
+let incomePayments=data?.incomePayments||[];
+let incomeCats=data?.incomeCategories?.length? data.incomeCategories : DEFAULT_INCOME_CATS.slice();
+
 let isDark=(()=>{if(data && typeof data.isDark==="boolean") return data.isDark; try{let v=localStorage.getItem("pips_expense_dark_mode"); if(v!==null) return JSON.parse(v)}catch{} try{return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches}catch{return true}})();
-let activeMonth=curM(); let filterCat=null; let editId=null; let pendingEdit=null; let selectedScope="single";
-const el={totalsGrid:document.getElementById("totalsGrid"),catFilters:document.getElementById("catFilters"),pieWrap:document.getElementById("pieWrap"),pieLegend:document.getElementById("pieLegend"),monthTitle:document.getElementById("monthTitle"),jumpNow:document.getElementById("jumpNow"),mainContent:document.getElementById("mainContent"),prevBtn:document.getElementById("prevBtn"),nextBtn:document.getElementById("nextBtn"),themeBtn:document.getElementById("themeBtn"),logoImg:document.getElementById("logoImg")};
-function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify({templates,payments,categories:cats,isDark,version:9,savedAt:new Date().toISOString()}));}catch{}}
+let activeMonth=curM();
+let activeType='expense'; // expense | income
+let filterCatExpense=null, filterCatIncome=null;
+let editId=null, pendingEdit=null, selectedScope="single", editType='expense';
+
+const el={totalsGrid:document.getElementById("totalsGrid"),catFilters:document.getElementById("catFilters"),pieWrap:document.getElementById("pieWrap"),pieLegend:document.getElementById("pieLegend"),monthTitle:document.getElementById("monthTitle"),jumpNow:document.getElementById("jumpNow"),mainContent:document.getElementById("mainContent"),prevBtn:document.getElementById("prevBtn"),nextBtn:document.getElementById("nextBtn"),themeBtn:document.getElementById("themeBtn"),logoImg:document.getElementById("logoImg"),expenseTabBtn:document.getElementById("expenseTabBtn"),incomeTabBtn:document.getElementById("incomeTabBtn"),newBtn:document.getElementById("newBtn")};
+
+function save(){
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify({
+      expenseTemplates, expensePayments, expenseCategories:expenseCats,
+      incomeTemplates, incomePayments, incomeCategories:incomeCats,
+      categories:expenseCats, templates:expenseTemplates, payments:expensePayments,
+      isDark, version:11, savedAt:new Date().toISOString()
+    }));
+  }catch{}
+}
+
 function sunIcon(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>`}
 function moonIcon(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`}
 function applyTheme(){document.documentElement.classList.toggle("light",!isDark); el.themeBtn.innerHTML=isDark? sunIcon(): moonIcon(); el.logoImg.src=isDark? LOGO_DARK : LOGO_LIGHT; renderAll();}
-function findPay(tid,m){return payments.find(p=>p.templateId===tid && p.month===m)}
-function dispAmt(tpl,m){let p=findPay(tpl.id,m); if(p && p.amount!=null) return p.amount; return tpl.amount}
-function isPaid(tid,m){let p=findPay(tid,m); return p? p.paid!==false : false}
+
+function findPayExpense(tid,m){return expensePayments.find(p=>p.templateId===tid && p.month===m)}
+function findPayIncome(tid,m){return incomePayments.find(p=>p.templateId===tid && p.month===m)}
+function findPay(tid,m){return activeType==='expense'? findPayExpense(tid,m): findPayIncome(tid,m)}
+function dispAmtExpense(tpl,m){let p=findPayExpense(tpl.id,m); if(p && p.amount!=null) return p.amount; return tpl.amount}
+function dispAmtIncome(tpl,m){let p=findPayIncome(tpl.id,m); if(p && p.amount!=null) return p.amount; return tpl.amount}
+function dispAmt(tpl,m){return activeType==='expense'? dispAmtExpense(tpl,m): dispAmtIncome(tpl,m)}
+function isPaidExpense(tid,m){let p=findPayExpense(tid,m); return p? p.paid!==false : false}
+function isPaidIncome(tid,m){let p=findPayIncome(tid,m); return p? p.paid!==false : false}
+function isPaid(tid,m){return activeType==='expense'? isPaidExpense(tid,m): isPaidIncome(tid,m)}
+
 function getDue(tpl,mStr){
   if(!tpl.dueDate) return null;
   let due=parseD(tpl.dueDate);
@@ -242,196 +288,325 @@ function getDue(tpl,mStr){
   let diff=(y-dueY)*12 + (m-dueM);
   let rec=tpl.recurrence||"none";
   if(diff<0) return null;
-  if(rec==="none"){
-    // Non-recurring: ONLY show in its due month, even if backdated
-    if(diff===0) return new Date(y,m,Math.min(due.getDate(),dim(y,m)));
-    return null;
-  }
+  if(rec==="none"){ if(diff===0) return new Date(y,m,Math.min(due.getDate(),dim(y,m))); return null; }
   if(rec==="yearly"){ if(diff%12!==0) return null; return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
   if(rec==="quarterly"){ if(diff%3!==0) return null; return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
   if(rec==="semiannually"){ if(diff%6!==0) return null; return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
   return new Date(y,m,Math.min(due.getDate(),dim(y,m)));
 }
+
 function earliest(){
-  let ms=payments.map(p=>p.month).filter(Boolean)
-    .concat(templates.map(t=>t.createdAt?.slice(0,7)).filter(Boolean))
-    .concat(templates.map(t=>t.dueDate?.slice(0,7)).filter(Boolean));
+  let ms=[...expensePayments.map(p=>p.month), ...incomePayments.map(p=>p.month)].filter(Boolean)
+    .concat(expenseTemplates.map(t=>t.createdAt?.slice(0,7)).filter(Boolean))
+    .concat(incomeTemplates.map(t=>t.createdAt?.slice(0,7)).filter(Boolean))
+    .concat(expenseTemplates.map(t=>t.dueDate?.slice(0,7)).filter(Boolean))
+    .concat(incomeTemplates.map(t=>t.dueDate?.slice(0,7)).filter(Boolean));
   if(ms.length===0) return curM();
   return ms.reduce((a,b)=>a<b?a:b,ms[0]);
 }
 function latest(){return addM(curM(),12)}
+
+function computeMonthData(templates, payments, filterCat){
+  let dated=[], nodue=[], archive=[];
+  let filtered=filterCat? templates.filter(t=>t.category===filterCat): templates;
+  filtered.forEach(t=>{
+    let createdM = t.createdAt ? t.createdAt.slice(0,7) : null;
+    if(!t.dueDate && createdM && createdM > activeMonth) return;
+    if(!t.dueDate){
+      let pay=payments.find(p=>p.templateId===t.id && p.month===activeMonth);
+      let displayTpl = pay?.snapshotName ? {...t, name:pay.snapshotName, category:pay.snapshotCategory||t.category, notes:pay.snapshotNotes||t.notes} : t;
+      let paid = pay? pay.paid!==false : false;
+      let amt = (pay && pay.amount!=null)? pay.amount : t.amount;
+      nodue.push({tpl:displayTpl, origTpl:t, paid, amt});
+      return;
+    }
+    let due=getDue(t,activeMonth); if(!due) return;
+    let pay=payments.find(p=>p.templateId===t.id && p.month===activeMonth);
+    let displayTpl = pay?.snapshotName ? {...t, name:pay.snapshotName, category:pay.snapshotCategory||t.category, notes:pay.snapshotNotes||t.notes} : t;
+    let paid = pay? pay.paid!==false : false;
+    let amt = (pay && pay.amount!=null)? pay.amount : t.amount;
+    dated.push({tpl:displayTpl, origTpl:t, due, paid, amt});
+  });
+  payments.filter(p=>p.month===activeMonth).forEach(p=>{
+    if(!templates.find(t=>t.id===p.templateId)){
+      let amt=p.amount!=null? p.amount:0;
+      archive.push({amt,cat:p.snapshotCategory||"Other", payment:p});
+    }
+  });
+  let paidNodue = nodue.filter(x=>x.paid);
+  let total = dated.reduce((a,b)=>a+b.amt,0)+archive.reduce((a,b)=>a+b.amt,0)+paidNodue.reduce((a,b)=>a+b.amt,0);
+  let paid = dated.filter(x=>x.paid).reduce((a,b)=>a+b.amt,0)+archive.filter(x=>x.payment && x.payment.paid!==false).reduce((a,b)=>a+b.amt,0)+paidNodue.reduce((a,b)=>a+b.amt,0);
+  let unpaid=total-paid;
+  return {dated,nodue,archive,total,paid,unpaid,paidNodue};
+}
+
+let cachedExpenseData=null, cachedIncomeData=null;
+
 function renderTotals(){
- let dated=[], nodue=[], archive=[];
- // Always show templates that were due in activeMonth, even for past months (fixes September disappearing)
- let filtered=filterCat? templates.filter(t=>t.category===filterCat): templates;
- filtered.forEach(t=>{
-   let createdM = t.createdAt ? t.createdAt.slice(0,7) : null;
-   // Only hide no-due items that were created after activeMonth
-   if(!t.dueDate && createdM && createdM > activeMonth) return;
-   if(!t.dueDate){
-     // Check for single-entry name override
-     let pay=findPay(t.id,activeMonth);
-     let displayTpl = pay?.snapshotName ? {...t, name:pay.snapshotName, category:pay.snapshotCategory||t.category, notes:pay.snapshotNotes||t.notes} : t;
-     nodue.push({tpl:displayTpl,paid:isPaid(t.id,activeMonth),amt:dispAmt(t,activeMonth)});
-     return;
-   }
-   let due=getDue(t,activeMonth); if(!due) return;
-   let pay=findPay(t.id,activeMonth);
-   let displayTpl = pay?.snapshotName ? {...t, name:pay.snapshotName, category:pay.snapshotCategory||t.category, notes:pay.snapshotNotes||t.notes} : t;
-   dated.push({tpl:displayTpl,due,paid:isPaid(t.id,activeMonth),amt:dispAmt(t,activeMonth)});
- });
- // Keep archive for deleted templates
- payments.filter(p=>p.month===activeMonth).forEach(p=>{
-   if(!templates.find(x=>x.id===p.templateId)){
-     let t=templates.find(x=>x.id===p.templateId);
-     let amt=p.amount!=null? p.amount: (t?.amount||0);
-     archive.push({amt,cat:p.snapshotCategory||t?.category||"Other", payment:p});
-   }
- });
- // Outstanding (no due date) unpaid should NOT be in totals/pie, only when paid
- let paidNodue = nodue.filter(x=>x.paid);
- let total = dated.reduce((a,b)=>a+b.amt,0)+archive.reduce((a,b)=>a+b.amt,0)+paidNodue.reduce((a,b)=>a+b.amt,0);
- let paid = dated.filter(x=>x.paid).reduce((a,b)=>a+b.amt,0)+archive.filter(x=>x.payment && x.payment.paid!==false).reduce((a,b)=>a+b.amt,0)+paidNodue.reduce((a,b)=>a+b.amt,0);
- let unpaid=total-paid;
- el.totalsGrid.innerHTML=`<div class="card"><div class="totals-label">Total</div><div class="totals-value">$${total.toFixed(2)}</div></div><div class="card"><div class="totals-label">Paid</div><div class="totals-value totals-paid">$${paid.toFixed(2)}</div></div><div class="card"><div class="totals-label">Unpaid</div><div class="totals-value totals-unpaid">$${unpaid.toFixed(2)}</div></div>`;
- return {dated,nodue,archive};
+  cachedExpenseData=computeMonthData(expenseTemplates, expensePayments, filterCatExpense);
+  cachedIncomeData=computeMonthData(incomeTemplates, incomePayments, filterCatIncome);
+  
+  let exp=cachedExpenseData, inc=cachedIncomeData;
+  
+  if(activeType==='expense'){
+    // Total Expense vs Total Income
+    el.totalsGrid.innerHTML=`
+      <div class="card"><div class="totals-label">Total Expense vs Income</div><div class="totals-value" style="font-size:18px">$${exp.total.toFixed(2)} <span style="font-size:12px;color:var(--muted);font-weight:400">vs</span> $${inc.total.toFixed(2)}</div><div style="font-size:10px;color:var(--muted);margin-top:4px">Net: $${(inc.total-exp.total).toFixed(2)} ${inc.total>=exp.total?'💚':'🔴'}</div></div>
+      <div class="card"><div class="totals-label">Paid Expense</div><div class="totals-value totals-paid">$${exp.paid.toFixed(2)}</div></div>
+      <div class="card"><div class="totals-label">Unpaid Expense</div><div class="totals-value totals-unpaid">$${exp.unpaid.toFixed(2)}</div></div>`;
+  } else {
+    el.totalsGrid.innerHTML=`
+      <div class="card"><div class="totals-label">Total Income vs Expense</div><div class="totals-value" style="font-size:18px">$${inc.total.toFixed(2)} <span style="font-size:12px;color:var(--muted);font-weight:400">vs</span> $${exp.total.toFixed(2)}</div><div style="font-size:10px;color:var(--muted);margin-top:4px">Net: $${(inc.total-exp.total).toFixed(2)} ${inc.total>=exp.total?'💚':'🔴'}</div></div>
+      <div class="card"><div class="totals-label">Realized Income</div><div class="totals-value totals-paid">$${inc.paid.toFixed(2)}</div></div>
+      <div class="card"><div class="totals-label">Unrealized Income</div><div class="totals-value totals-unpaid">$${inc.unpaid.toFixed(2)}</div></div>`;
+  }
+  return activeType==='expense'? exp: inc;
 }
+
 function renderCats(){
- el.catFilters.innerHTML="";
- let mk=(label,val)=>{let b=document.createElement("button"); b.className="cat-pill"+(filterCat===val?" active":""); b.textContent=label; b.onclick=()=>{filterCat=val; renderAll();}; return b;};
- el.catFilters.appendChild(mk("All",null));
- cats.forEach(c=> el.catFilters.appendChild(mk(c,c)));
- let sel=document.getElementById("f_cat"); sel.innerHTML=""; cats.forEach(c=>{let o=document.createElement("option"); o.value=c; o.textContent=c; sel.appendChild(o);});
+  el.catFilters.innerHTML="";
+  let cats = activeType==='expense'? expenseCats : incomeCats;
+  let filterCat = activeType==='expense'? filterCatExpense : filterCatIncome;
+  let mk=(label,val)=>{
+    let b=document.createElement("button");
+    b.className="cat-pill"+(filterCat===val?" active":"");
+    b.textContent=label;
+    b.onclick=()=>{
+      if(activeType==='expense') filterCatExpense=val; else filterCatIncome=val;
+      renderAll();
+    };
+    return b;
+  };
+  el.catFilters.appendChild(mk("All",null));
+  cats.forEach(c=> el.catFilters.appendChild(mk(c,c)));
+  let sel=document.getElementById("f_cat");
+  sel.innerHTML="";
+  cats.forEach(c=>{let o=document.createElement("option"); o.value=c; o.textContent=c; sel.appendChild(o);});
 }
+
 function renderPie(dated,nodue,archive){
- let entries=[];
- // Dated items always in pie
- dated.forEach(x=>{let cat=x.tpl? x.tpl.category : x.cat; entries.push({cat,amt:x.amt});});
- // Only paid outstanding (no due date) should be in pie, unpaid should not
- nodue.filter(x=>x.paid).forEach(x=>{let cat=x.tpl? x.tpl.category : x.cat; entries.push({cat,amt:x.amt});});
- archive.forEach(x=>{ entries.push({cat:x.cat,amt:x.amt}); });
- let map=new Map(); entries.forEach(e=>{map.set(e.cat,(map.get(e.cat)||0)+e.amt)});
- let total=Array.from(map.values()).reduce((a,b)=>a+b,0);
- let data=Array.from(map.entries()).map(([cat,amt],i)=>({cat,amt,pct: total? amt/total*100:0,color:COLORS[cat]||PAL[i%PAL.length]})).sort((a,b)=>b.amt-a.amt);
- if(data.length===0){ el.pieWrap.innerHTML=`<div style="font-size:11px;color:var(--muted);padding:12px;border:1px dashed var(--border-dark);border-radius:10px">No data</div>`; el.pieLegend.innerHTML=""; return;}
- let size=220;
- let svg=`<svg width="${size}" height="${size}" viewBox="0 0 200 200" style="overflow:visible"><g>`; let curA=0;
- data.forEach(d=>{let sweep=d.pct/100*360; let start=curA, end=curA+sweep; curA=end; let large=sweep>180?1:0; let rad=(deg)=>(deg-90)*Math.PI/180; let x1=100+78*Math.cos(rad(start)), y1=100+78*Math.sin(rad(start)); let x2=100+78*Math.cos(rad(end)), y2=100+78*Math.sin(rad(end)); if(sweep>=359.9){ svg+=`<circle cx="100" cy="100" r="78" fill="${d.color}"/>`; } else { svg+=`<path d="M 100 100 L ${x1} ${y1} A 78 78 0 ${large} 1 ${x2} ${y2} Z" fill="${d.color}" stroke="${isDark?'#181b22':'#ffffff'}" stroke-width="2"/>`; }});
- svg+=`<circle cx="100" cy="100" r="32" fill="${isDark?'#181b22':'#ffffff'}"/></g></svg>`; el.pieWrap.innerHTML=svg;
- el.pieLegend.innerHTML=data.map(d=>`<div class="pie-legend"><div style="display:flex;gap:7px;align-items:center"><span style="width:9px;height:9px;border-radius:50%;background:${d.color};display:inline-block"></span><span style="font-weight:500">${d.cat}</span></div><div><span style="color:var(--muted)">$${d.amt.toFixed(0)}</span> <span style="font-weight:600;margin-left:5px">${d.pct.toFixed(0)}%</span></div></div>`).join("")+`<div style="border-top:1px solid var(--border-dark);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-size:10px;font-weight:700"><span>Total</span><span>$${total.toFixed(2)}</span></div>`;
+  let entries=[];
+  dated.forEach(x=>{let cat=x.tpl? x.tpl.category : x.cat; entries.push({cat,amt:x.amt});});
+  // Only paid outstanding in pie
+  nodue.filter(x=>x.paid).forEach(x=>{let cat=x.tpl? x.tpl.category : x.cat; entries.push({cat,amt:x.amt});});
+  archive.forEach(x=>{ entries.push({cat:x.cat,amt:x.amt}); });
+  let map=new Map();
+  entries.forEach(e=>{map.set(e.cat,(map.get(e.cat)||0)+e.amt)});
+  let total=Array.from(map.values()).reduce((a,b)=>a+b,0);
+  let colors = activeType==='expense'? COLORS_EXP : COLORS_INC;
+  let data=Array.from(map.entries()).map(([cat,amt],i)=>({cat,amt,pct: total? amt/total*100:0,color:colors[cat]||PAL[i%PAL.length]})).sort((a,b)=>b.amt-a.amt);
+  if(data.length===0){
+    el.pieWrap.innerHTML=`<div style="font-size:11px;color:var(--muted);padding:12px;border:1px dashed var(--border-dark);border-radius:10px">No data</div>`;
+    el.pieLegend.innerHTML="";
+    return;
+  }
+  let size=220;
+  let svg=`<svg width="${size}" height="${size}" viewBox="0 0 200 200" style="overflow:visible"><g>`; let curA=0;
+  data.forEach(d=>{
+    let sweep=d.pct/100*360; let start=curA, end=curA+sweep; curA=end;
+    let large=sweep>180?1:0;
+    let rad=(deg)=>(deg-90)*Math.PI/180;
+    let x1=100+78*Math.cos(rad(start)), y1=100+78*Math.sin(rad(start));
+    let x2=100+78*Math.cos(rad(end)), y2=100+78*Math.sin(rad(end));
+    if(sweep>=359.9){ svg+=`<circle cx="100" cy="100" r="78" fill="${d.color}"/>`; }
+    else { svg+=`<path d="M 100 100 L ${x1} ${y1} A 78 78 0 ${large} 1 ${x2} ${y2} Z" fill="${d.color}" stroke="${isDark?'#181b22':'#ffffff'}" stroke-width="2"/>`; }
+  });
+  svg+=`<circle cx="100" cy="100" r="32" fill="${isDark?'#181b22':'#ffffff'}"/></g></svg>`;
+  el.pieWrap.innerHTML=svg;
+  el.pieLegend.innerHTML=data.map(d=>`<div class="pie-legend"><div style="display:flex;gap:7px;align-items:center"><span style="width:9px;height:9px;border-radius:50%;background:${d.color};display:inline-block"></span><span style="font-weight:500">${d.cat}</span></div><div><span style="color:var(--muted)">$${d.amt.toFixed(0)}</span> <span style="font-weight:600;margin-left:5px">${d.pct.toFixed(0)}%</span></div></div>`).join("")+`<div style="border-top:1px solid var(--border-dark);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-size:10px;font-weight:700"><span>Total</span><span>$${total.toFixed(2)}</span></div>`;
 }
+
 function iconPencil(){return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="M15 5l4 4"/></svg>`}
 function iconTrash(){return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`}
 function iconCal(){return `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`}
+
 function rowHtml({tpl,due,paid,amt,dueSoon,overdue,isOutstanding}){
  let cls="item"+(paid?" paid":"")+(overdue&&!paid?" overdue":"")+(dueSoon&&!paid?" duesoon":"");
  let dueLabel=due? `${due.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"}).replace(',','')} • ${tpl.recurrence}` : `No due date${tpl.recurrence!=="none"?` • ${tpl.recurrence}`:""}`;
- let badges=`<span class="badge">${tpl.category}</span>`+(dueSoon?`<span class="badge badge-amber">Due soon</span>`:"")+(overdue&&!paid?`<span class="badge badge-red">Overdue</span>`:"");
+ let badges=`<span class="badge">${tpl.category}</span>`+(dueSoon?`<span class="badge badge-amber">Due soon</span>`:"")+(overdue&&!paid?`<span class="badge badge-red">Overdue</span>`:"")+(isOutstanding&&!paid?`<span class="badge" style="border-color:#f59e0b;color:#f59e0b">Outstanding</span>`:"");
  return `<div class="${cls}"><div class="circle ${paid?"checked":""}" data-toggle="${tpl.id}">${paid?"✓":""}</div><div style="flex:1;min-width:0"><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap"><span style="font-weight:600;font-size:12px;${paid?"text-decoration:line-through;opacity:.7":""}">${tpl.name}</span>${badges}</div><div style="font-size:10px;color:var(--muted);display:flex;gap:4px;align-items:center;margin-top:2px">${iconCal()} ${dueLabel}</div></div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0"><span style="font-weight:600;font-size:12px;${paid?"text-decoration:line-through;opacity:.7":(isOutstanding?"color:#f59e0b":"")}">$${amt.toFixed(2)}</span><button class="icon-btn" data-edit="${tpl.id}">${iconPencil()}</button><button class="icon-btn" data-del="${tpl.id}">${iconTrash()}</button></div></div>`;
 }
+
 function renderMain(){
  let {dated,nodue,archive}=renderTotals();
  let main=document.getElementById("mainContent");
  let today=today0(); let in5=new Date(today); in5.setDate(today.getDate()+5);
- let isPast=activeMonth<curM();
-
-  dated.sort((a,b)=>{ if(a.paid!==b.paid) return a.paid?1:-1; let aOver = !a.paid && a.due<today; let bOver = !b.paid && b.due<today; let aSoon = !a.paid && a.due>=today && a.due<=in5; let bSoon = !b.paid && b.due>=today && b.due<=in5; if(aOver!==bOver) return aOver?-1:1; if(aSoon!==bSoon) return aSoon?-1:1; if(a.due && b.due) return a.due-b.due; return a.tpl.name.localeCompare(b.tpl.name); });
+ dated.sort((a,b)=>{ if(a.paid!==b.paid) return a.paid?1:-1; let aOver = !a.paid && a.due<today; let bOver = !b.paid && b.due<today; let aSoon = !a.paid && a.due>=today && a.due<=in5; let bSoon = !b.paid && b.due>=today && b.due<=in5; if(aOver!==bOver) return aOver?-1:1; if(aSoon!==bSoon) return aSoon?-1:1; if(a.due && b.due) return a.due-b.due; return a.tpl.name.localeCompare(b.tpl.name); });
  nodue.sort((a,b)=>{ if(a.paid!==b.paid) return a.paid?1:-1; return a.tpl.name.localeCompare(b.tpl.name); });
  let html="";
- if(nodue.length>0){
-  html+=`<div style="margin-bottom:16px"><div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><h2 style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#fbbf24;margin:0;font-weight:700">Outstanding</h2><span class="badge">${nodue.length}</span></div><div style="display:flex;flex-direction:column;gap:6px">`;
-  nodue.forEach(x=>{ html+=rowHtml({tpl:x.tpl,due:null,paid:x.paid,amt:x.amt,isOutstanding:true}); });
+ let outstanding = nodue.filter(x=>!x.paid);
+ let paidOutstanding = nodue.filter(x=>x.paid);
+ 
+ if(outstanding.length>0){
+  html+=`<div style="margin-bottom:16px"><div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><h2 style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#fbbf24;margin:0;font-weight:700">Outstanding</h2><span class="badge">${outstanding.length}</span></div><div style="display:flex;flex-direction:column;gap:6px">`;
+  outstanding.forEach(x=>{ html+=rowHtml({tpl:x.tpl,due:null,paid:x.paid,amt:x.amt,isOutstanding:true}); });
   html+=`</div></div>`;
  }
+ 
+ // Show paid outstanding as part of this month
+ if(paidOutstanding.length>0){
+  html+=`<div style="margin-bottom:16px"><div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><h2 style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.7;margin:0;font-weight:600">Completed Outstanding - ${labelM(activeMonth)}</h2><span class="badge badge-green">✓ ${paidOutstanding.length}</span></div><div style="display:flex;flex-direction:column;gap:6px">`;
+  paidOutstanding.forEach(x=>{ html+=rowHtml({tpl:x.tpl,due:x.tpl.dueDate? parseD(x.tpl.dueDate): null,paid:true,amt:x.amt}); });
+  html+=`</div></div>`;
+ }
+ 
  html+=`<div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="display:flex;gap:6px;align-items:center"><h2 style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.7;margin:0;font-weight:700">This Month</h2><span class="badge">${dated.length}</span></div><span style="font-size:10px;color:var(--muted)">${labelM(activeMonth)}</span></div>`;
- if(dated.length===0 && nodue.length===0){ html+=`<div class="card" style="text-align:center;padding:24px;color:var(--muted);font-size:11px">No expenses yet</div>`; }
- else if(dated.length===0){ html+=`<div class="card" style="border-style:dashed;text-align:center;padding:18px;color:var(--muted);font-size:10px">No dated expenses this month.</div>`; }
- else {
+ if(dated.length===0 && outstanding.length===0 && paidOutstanding.length===0){
+   html+=`<div class="card" style="text-align:center;padding:24px;color:var(--muted);font-size:11px">No ${activeType} yet</div>`;
+ } else if(dated.length===0){
+   html+=`<div class="card" style="border-style:dashed;text-align:center;padding:18px;color:var(--muted);font-size:10px">No dated ${activeType} this month.</div>`;
+ } else {
   html+=`<div style="display:flex;flex-direction:column;gap:6px">`;
   dated.forEach(x=>{ let dueSoon = !x.paid && x.due>=today && x.due<=in5; let overdue = !x.paid && x.due<today; html+=rowHtml({tpl:x.tpl,due:x.due,paid:x.paid,amt:x.amt,dueSoon,overdue}); });
   html+=`</div>`;
  }
- html+=`</div>`; main.innerHTML=html;
+ html+=`</div>`;
+ main.innerHTML=html;
  main.querySelectorAll("[data-toggle]").forEach(b=>{b.onclick=()=>{togglePaid(b.dataset.toggle)}});
  main.querySelectorAll("[data-edit]").forEach(b=>{b.onclick=()=>{openEdit(b.dataset.edit)}});
  main.querySelectorAll("[data-del]").forEach(b=>{b.onclick=()=>{deleteTpl(b.dataset.del)}});
 }
-function renderAll(){ let {dated,nodue,archive}=renderTotals(); renderCats(); renderPie(dated,nodue,archive); renderMain(); document.getElementById("monthTitle").textContent=labelM(activeMonth); document.getElementById("jumpNow").style.display= activeMonth!==curM() ? "inline" : "none"; let canPrev=activeMonth<=earliest(); let canNext=activeMonth>=latest(); document.getElementById("prevBtn").disabled=canPrev; document.getElementById("nextBtn").disabled=canNext; }
+
+function renderAll(){
+  let {dated,nodue,archive}=renderTotals();
+  renderCats();
+  renderPie(dated,nodue,archive);
+  renderMain();
+  document.getElementById("monthTitle").textContent=labelM(activeMonth);
+  document.getElementById("jumpNow").style.display= activeMonth!==curM() ? "inline" : "none";
+  let canPrev=activeMonth<=earliest();
+  let canNext=activeMonth>=latest();
+  document.getElementById("prevBtn").disabled=canPrev;
+  document.getElementById("nextBtn").disabled=canNext;
+  // Update new button label
+  el.newBtn.innerHTML=`<span style="font-size:14px;line-height:1">+</span> <span class="hide-mobile">New ${activeType==='expense'?'Expense':'Income'}</span><span class="show-mobile">New</span>`;
+}
+
 function togglePaid(tid){
+  let templates = activeType==='expense'? expenseTemplates : incomeTemplates;
+  let payments = activeType==='expense'? expensePayments : incomePayments;
   let tpl=templates.find(t=>t.id===tid);
-  let ex=findPay(tid,activeMonth);
+  let findPayFn = activeType==='expense'? findPayExpense : findPayIncome;
+  let ex=findPayFn(tid,activeMonth);
   let todayStr=new Date().toISOString().slice(0,10);
   if(ex){
     if(ex.paid){
       if(ex.amount!=null){
-        payments=payments.map(p=>p.id===ex.id? {...p,paid:false,paidAt:new Date().toISOString()}:p);
+        if(activeType==='expense') expensePayments=expensePayments.map(p=>p.id===ex.id? {...p,paid:false,paidAt:new Date().toISOString()}:p);
+        else incomePayments=incomePayments.map(p=>p.id===ex.id? {...p,paid:false,paidAt:new Date().toISOString()}:p);
       } else {
-        payments=payments.filter(p=>p.id!==ex.id);
-        // If it was a no-due item, clear its due date when un-paid again
-        if(tpl && !tpl.dueDateOriginal && tpl.dueDate){
-          // Keep due date? User said auto-populate when paid, but when un-paid should it clear? We'll keep it to preserve history
-        }
+        if(activeType==='expense') expensePayments=expensePayments.filter(p=>p.id!==ex.id);
+        else incomePayments=incomePayments.filter(p=>p.id!==ex.id);
       }
     } else {
-      payments=payments.map(p=>p.id===ex.id? {...p,paid:true,paidAt:new Date().toISOString()}:p);
-      // Auto-populate due date for no-due items when marked paid
+      if(activeType==='expense') expensePayments=expensePayments.map(p=>p.id===ex.id? {...p,paid:true,paidAt:new Date().toISOString()}:p);
+      else incomePayments=incomePayments.map(p=>p.id===ex.id? {...p,paid:true,paidAt:new Date().toISOString()}:p);
       if(tpl && !tpl.dueDate){
         tpl.dueDate=todayStr;
-        // Mark original state to allow revert if needed
-        tpl.dueDateOriginal=false;
       }
     }
   } else {
-    payments.push({id:uid(),templateId:tid,month:activeMonth,amount:null,paidAt:new Date().toISOString(),paid:true,snapshotName:tpl?.name,snapshotCategory:tpl?.category});
-    // Auto-populate due date for no-due items when marked paid
+    let newPay={id:uid(),templateId:tid,month:activeMonth,amount:null,paidAt:new Date().toISOString(),paid:true,snapshotName:tpl?.name,snapshotCategory:tpl?.category};
+    if(activeType==='expense') expensePayments.push(newPay); else incomePayments.push(newPay);
     if(tpl && !tpl.dueDate){
       tpl.dueDate=todayStr;
     }
   }
   save(); renderAll();
 }
-function deleteTpl(id){ if(!confirm("Delete? Past payments preserved.")) return; templates=templates.filter(t=>t.id!==id); save(); renderAll(); }
-function openNew(){ editId=null; document.getElementById("modalTitle").textContent="New Expense"; document.getElementById("f_name").value=""; document.getElementById("f_amount").value=""; document.getElementById("f_due").value=""; document.getElementById("f_rec").value="monthly"; document.getElementById("f_cat").value=cats[0]||"Other"; document.getElementById("f_newcat").value=""; document.getElementById("f_notes").value=""; document.getElementById("editBackdrop").classList.add("open"); }
+
+function deleteTpl(id){
+  if(!confirm("Delete? Past payments preserved.")) return;
+  if(activeType==='expense') expenseTemplates=expenseTemplates.filter(t=>t.id!==id);
+  else incomeTemplates=incomeTemplates.filter(t=>t.id!==id);
+  save(); renderAll();
+}
+
+function openNew(){
+  editId=null;
+  editType=activeType;
+  let isIncome = activeType==='income';
+  document.getElementById("modalTitle").textContent=isIncome? "New Income" : "New Expense";
+  document.getElementById("f_name").value="";
+  document.getElementById("f_amount").value="";
+  document.getElementById("f_due").value="";
+  document.getElementById("f_rec").value="monthly";
+  let cats = isIncome? incomeCats : expenseCats;
+  document.getElementById("f_cat").value=cats[0]|| (isIncome? "Other Income":"Other");
+  document.getElementById("f_newcat").value="";
+  document.getElementById("f_notes").value="";
+  renderCats();
+  document.getElementById("editBackdrop").classList.add("open");
+}
+
 function openEdit(id){
+  let templates = activeType==='expense'? expenseTemplates : incomeTemplates;
+  let payments = activeType==='expense'? expensePayments : incomePayments;
   let t=templates.find(x=>x.id===id); if(!t) return;
   editId=id;
-  let pay=findPay(id,activeMonth);
-  // For single-entry overrides, show the occurrence's values, not just template
+  editType=activeType;
+  let pay=payments.find(p=>p.templateId===id && p.month===activeMonth);
   let nameVal = pay?.snapshotName || t.name;
   let amountVal = (pay && pay.amount!=null) ? pay.amount : t.amount;
   let dueVal = t.dueDate||"";
   let recVal = t.recurrence;
   let catVal = pay?.snapshotCategory || t.category;
   let notesVal = pay?.snapshotNotes || pay?.notes || t.notes || "";
-  document.getElementById("modalTitle").textContent="Edit Expense";
+  document.getElementById("modalTitle").textContent= activeType==='income'? "Edit Income" : "Edit Expense";
   document.getElementById("f_name").value=nameVal;
   document.getElementById("f_amount").value=amountVal;
   document.getElementById("f_due").value=dueVal;
   document.getElementById("f_rec").value=recVal;
   document.getElementById("f_cat").value=catVal;
   document.getElementById("f_notes").value=notesVal;
+  renderCats();
+  document.getElementById("f_cat").value=catVal;
   document.getElementById("editBackdrop").classList.add("open");
 }
+
 function commitSave(data,scope){
  let {name,amount,dueDate,recurrence,category,notes}=data;
- if(!editId){ const t={id:uid(),name,amount,dueDate:dueDate||null,recurrence,category,createdAt:new Date().toISOString()}; if(notes) t.notes=notes; templates.push(t); return; }
+ let templates = editType==='expense'? expenseTemplates : incomeTemplates;
+ let payments = editType==='expense'? expensePayments : incomePayments;
+ 
+ if(!editId){
+   const t={id:uid(),name,amount,dueDate:dueDate||null,recurrence,category,createdAt:new Date().toISOString()};
+   if(notes) t.notes=notes;
+   if(editType==='expense') expenseTemplates.push(t); else incomeTemplates.push(t);
+   return;
+ }
  let existing=templates.find(t=>t.id===editId); if(!existing) return;
  if(scope==="all" || !existing || existing.recurrence==="none"){
-  templates=templates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
-  if(scope==="all"){ payments=payments.map(p=> p.templateId===editId? {...p,snapshotName:name,snapshotCategory:category}:p); } 
- } else if(scope==="single"){
-  let ex=findPay(editId,activeMonth);
-  // Preserve amount, name, category, notes for this single occurrence
-  if(ex){
-    payments=payments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes:notes}:p);
+  if(editType==='expense'){
+    expenseTemplates=expenseTemplates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
   } else {
-    payments.push({id:uid(),templateId:editId,month:activeMonth,amount,paidAt:new Date().toISOString(),paid:false,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes:notes});
+    incomeTemplates=incomeTemplates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
+  }
+  if(scope==="all"){
+    if(editType==='expense') expensePayments=expensePayments.map(p=> p.templateId===editId? {...p,snapshotName:name,snapshotCategory:category,snapshotNotes:notes}:p);
+    else incomePayments=incomePayments.map(p=> p.templateId===editId? {...p,snapshotName:name,snapshotCategory:category,snapshotNotes:notes}:p);
+  }
+ } else if(scope==="single"){
+  let findFn = editType==='expense'? findPayExpense : findPayIncome;
+  let ex=findFn(editId,activeMonth);
+  if(ex){
+    if(editType==='expense') expensePayments=expensePayments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes}:p);
+    else incomePayments=incomePayments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes}:p);
+  } else {
+    let newPay={id:uid(),templateId:editId,month:activeMonth,amount,paidAt:new Date().toISOString(),paid:false,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes};
+    if(editType==='expense') expensePayments.push(newPay); else incomePayments.push(newPay);
   }
  } else if(scope==="forward"){
-  templates=templates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
-  payments=payments.map(p=>{ if(p.templateId!==editId) return p; if(p.month>=activeMonth){ return {...p,amount: p.amount!=null? amount: p.amount, snapshotName:name,snapshotCategory:category}; } return p; });
+  if(editType==='expense'){
+    expenseTemplates=expenseTemplates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
+    expensePayments=expensePayments.map(p=>{ if(p.templateId!==editId) return p; if(p.month>=activeMonth){ return {...p,amount: p.amount!=null? amount: p.amount, snapshotName:name,snapshotCategory:category,snapshotNotes:notes}; } return p; });
+  } else {
+    incomeTemplates=incomeTemplates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
+    incomePayments=incomePayments.map(p=>{ if(p.templateId!==editId) return p; if(p.month>=activeMonth){ return {...p,amount: p.amount!=null? amount: p.amount, snapshotName:name,snapshotCategory:category,snapshotNotes:notes}; } return p; });
+  }
  }
 }
+
 document.getElementById("newBtn").onclick=openNew;
 document.getElementById("themeBtn").onclick=()=>{isDark=!isDark; save(); applyTheme();};
 document.getElementById("prevBtn").onclick=()=>{if(activeMonth>earliest()){activeMonth=addM(activeMonth,-1); renderAll();}};
@@ -439,23 +614,115 @@ document.getElementById("nextBtn").onclick=()=>{if(activeMonth<latest()){activeM
 document.getElementById("jumpNow").onclick=()=>{activeMonth=curM(); renderAll();};
 document.getElementById("cancelEdit").onclick=()=>{document.getElementById("editBackdrop").classList.remove("open"); editId=null;};
 document.getElementById("editBackdrop").onclick=(e)=>{if(e.target.id==="editBackdrop") document.getElementById("editBackdrop").classList.remove("open");};
-document.getElementById("addCatBtn").onclick=()=>{let v=document.getElementById("f_newcat").value.trim(); if(!v) return; if(!cats.includes(v)) cats.push(v); renderCats(); document.getElementById("f_cat").value=v; document.getElementById("f_newcat").value=""; save();};
+document.getElementById("addCatBtn").onclick=()=>{
+  let v=document.getElementById("f_newcat").value.trim(); if(!v) return;
+  if(activeType==='expense' || editType==='expense'){
+    if(!expenseCats.includes(v)) expenseCats.push(v);
+  } else {
+    if(!incomeCats.includes(v)) incomeCats.push(v);
+  }
+  if(editType==='expense' || activeType==='expense'){
+    if(!expenseCats.includes(v)) expenseCats.push(v);
+  }
+  // For new category, add to correct list based on editType
+  if(editType==='income' || (editType==='expense' && activeType==='income' && !editId)){
+    if(!incomeCats.includes(v) && activeType==='income') incomeCats.push(v);
+  }
+  // Simpler: add to both if needed, but ensure correct
+  if(activeType==='income' && !incomeCats.includes(v)) incomeCats.push(v);
+  if(activeType==='expense' && !expenseCats.includes(v)) expenseCats.push(v);
+  renderCats();
+  document.getElementById("f_cat").value=v;
+  document.getElementById("f_newcat").value="";
+  save();
+};
 document.getElementById("saveEdit").onclick=()=>{
  let name=document.getElementById("f_name").value.trim(); let amountStr=document.getElementById("f_amount").value; let due=document.getElementById("f_due").value; let rec=document.getElementById("f_rec").value; let cat=document.getElementById("f_cat").value; let newCat=document.getElementById("f_newcat").value.trim(); let notes=document.getElementById("f_notes").value.trim();
  if(!name || !amountStr){alert("Please fill name and amount"); return;} let amt=Number(amountStr); if(isNaN(amt)||amt<=0){alert("Amount must be positive"); return;}
- let finalCat=newCat||cat||"Other"; if(newCat && !cats.includes(newCat)){ cats.push(newCat); finalCat=newCat; }
+ let finalCat=newCat||cat|| (editType==='income'?"Other Income":"Other");
+ if(newCat){
+   if(editType==='income' || activeType==='income'){
+     if(!incomeCats.includes(newCat)) incomeCats.push(newCat);
+   } else {
+     if(!expenseCats.includes(newCat)) expenseCats.push(newCat);
+   }
+   finalCat=newCat;
+ }
  let data={name,amount:amt,dueDate:due||null,recurrence:rec,category:finalCat,notes};
- if(editId){let ex=templates.find(t=>t.id===editId); if(ex && ex.recurrence!=="none"){ pendingEdit=data; selectedScope="single"; document.querySelectorAll(".scope-opt").forEach(o=>o.classList.toggle("selected", o.dataset.scope==="single")); document.getElementById("scopeDesc").innerHTML=`This expense repeats ${ex.recurrence}. How would you like to apply the change for <strong>${labelM(activeMonth)}</strong>?`; document.getElementById("scopeBackdrop").classList.add("open"); return; }}
- try{ commitSave(data,"all"); }catch(e){ console.error(e); } document.getElementById("editBackdrop").classList.remove("open"); editId=null; try{ save(); }catch(e){ console.error("save failed", e); } renderAll();
+ if(editId){
+   let templates = editType==='expense'? expenseTemplates : incomeTemplates;
+   let ex=templates.find(t=>t.id===editId);
+   if(ex && ex.recurrence!=="none"){
+     pendingEdit=data; selectedScope="single";
+     document.querySelectorAll(".scope-opt").forEach(o=>o.classList.toggle("selected", o.dataset.scope==="single"));
+     document.getElementById("scopeDesc").innerHTML=`This ${editType} repeats ${ex.recurrence}. How would you like to apply the change for <strong>${labelM(activeMonth)}</strong>?`;
+     document.getElementById("scopeBackdrop").classList.add("open");
+     return;
+   }
+ }
+ try{ commitSave(data,"all"); }catch(e){ console.error(e); }
+ document.getElementById("editBackdrop").classList.remove("open"); editId=null;
+ try{ save(); }catch(e){ console.error("save failed", e); }
+ renderAll();
 };
 document.querySelectorAll(".scope-opt").forEach(o=>{ o.onclick=()=>{ selectedScope=o.dataset.scope; document.querySelectorAll(".scope-opt").forEach(x=>x.classList.toggle("selected", x.dataset.scope===selectedScope)); };});
 document.getElementById("scopeCancel").onclick=()=>{document.getElementById("scopeBackdrop").classList.remove("open"); pendingEdit=null;};
 document.getElementById("scopeBackdrop").onclick=(e)=>{if(e.target.id==="scopeBackdrop") document.getElementById("scopeBackdrop").classList.remove("open");};
-document.getElementById("scopeApply").onclick=()=>{ try{ if(pendingEdit){ commitSave(pendingEdit,selectedScope); } }catch(e){ console.error(e); } document.getElementById("scopeBackdrop").classList.remove("open"); document.getElementById("editBackdrop").classList.remove("open"); pendingEdit=null; editId=null; try{ save(); }catch(e){ console.error("save failed", e); } renderAll(); };
-document.getElementById("exportBtn").onclick=()=>{ try{let blob=new Blob([JSON.stringify({templates,payments,categories:cats,isDark,version:9,exportedAt:new Date().toISOString()},null,2)],{type:"application/json"}); let url=URL.createObjectURL(blob); let a=document.createElement("a"); a.href=url; a.download=`expense-tracker-${curM()}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);}catch{alert("Export failed")} };
+document.getElementById("scopeApply").onclick=()=>{
+  try{ if(pendingEdit){ commitSave(pendingEdit,selectedScope); } }catch(e){ console.error(e); }
+  document.getElementById("scopeBackdrop").classList.remove("open");
+  document.getElementById("editBackdrop").classList.remove("open");
+  pendingEdit=null; editId=null;
+  try{ save(); }catch(e){ console.error("save failed", e); }
+  renderAll();
+};
+document.getElementById("exportBtn").onclick=()=>{
+  try{
+    let blob=new Blob([JSON.stringify({expenseTemplates,expensePayments,expenseCategories:expenseCats,incomeTemplates,incomePayments,incomeCategories:incomeCats,isDark,version:11,exportedAt:new Date().toISOString()},null,2)],{type:"application/json"});
+    let url=URL.createObjectURL(blob); let a=document.createElement("a"); a.href=url; a.download=`pips-tracker-${curM()}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  }catch{alert("Export failed")}
+};
 document.getElementById("importBtn").onclick=()=>document.getElementById("fileInput").click();
-document.getElementById("fileInput").onchange=(e)=>{let f=e.target.files?.[0]; if(!f) return; let r=new FileReader(); r.onload=()=>{ try{ let j=JSON.parse(r.result); let d=j.data?j.data:j; if(d.templates) templates=d.templates; if(d.payments) payments=d.payments; if(d.categories){let s=new Set(d.categories); DEFAULT_CATS.forEach(c=>s.add(c)); cats=Array.from(s);} if(typeof d.isDark==="boolean") isDark=d.isDark; save(); applyTheme(); alert("Import successful"); }catch{alert("Invalid JSON")} finally{e.target.value="";} }; r.readAsText(f); };
-document.getElementById("clearBtn").onclick=()=>{ if(!confirm("Clear all data?")) return; localStorage.removeItem(STORAGE_KEY); LEGACY.forEach(k=>localStorage.removeItem(k)); templates=[]; payments=[]; cats=DEFAULT_CATS.slice(); isDark=true; activeMonth=curM(); save(); applyTheme(); };
+document.getElementById("fileInput").onchange=(e)=>{
+  let f=e.target.files?.[0]; if(!f) return; let r=new FileReader();
+  r.onload=()=>{
+    try{
+      let j=JSON.parse(r.result); let d=j.data?j.data:j;
+      if(d.expenseTemplates){ expenseTemplates=d.expenseTemplates; expensePayments=d.expensePayments||[]; expenseCats=d.expenseCategories||DEFAULT_EXPENSE_CATS.slice(); }
+      else if(d.templates){ expenseTemplates=d.templates; expensePayments=d.payments||[]; expenseCats=d.categories||DEFAULT_EXPENSE_CATS.slice(); }
+      if(d.incomeTemplates){ incomeTemplates=d.incomeTemplates; incomePayments=d.incomePayments||[]; incomeCats=d.incomeCategories||DEFAULT_INCOME_CATS.slice(); }
+      if(d.categories && !d.expenseCategories){ let s=new Set(d.categories); DEFAULT_EXPENSE_CATS.forEach(c=>s.add(c)); expenseCats=Array.from(s); }
+      if(typeof d.isDark==="boolean") isDark=d.isDark;
+      save(); applyTheme(); alert("Import successful");
+    }catch{alert("Invalid JSON")} finally{e.target.value="";}
+  };
+  r.readAsText(f);
+};
+document.getElementById("clearBtn").onclick=()=>{
+  if(!confirm("Clear all data?")) return;
+  localStorage.removeItem(STORAGE_KEY);
+  LEGACY.forEach(k=>localStorage.removeItem(k));
+  expenseTemplates=[]; expensePayments=[]; expenseCats=DEFAULT_EXPENSE_CATS.slice();
+  incomeTemplates=[]; incomePayments=[]; incomeCats=DEFAULT_INCOME_CATS.slice();
+  isDark=true; activeMonth=curM(); save(); applyTheme();
+};
+
+// Type toggle
+el.expenseTabBtn.onclick=()=>{
+  activeType='expense';
+  el.expenseTabBtn.classList.add('active');
+  el.incomeTabBtn.classList.remove('active');
+  filterCatExpense=null;
+  renderAll();
+};
+el.incomeTabBtn.onclick=()=>{
+  activeType='income';
+  el.incomeTabBtn.classList.add('active');
+  el.expenseTabBtn.classList.remove('active');
+  filterCatIncome=null;
+  renderAll();
+};
+
 applyTheme();
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{ navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
@@ -491,11 +758,10 @@ if('serviceWorker' in navigator){
     }
   }
   document.addEventListener('DOMContentLoaded', disableLogoLink);
-  // Also check on load for iOS
   if(isPWA()){ document.documentElement.classList.add('pwa'); }
 })();
 
-// Hamburger menu logic - FIXED with proper script tag
+// Hamburger menu logic
 document.addEventListener('DOMContentLoaded', function(){
   const menuBtn=document.getElementById('menuBtn');
   const mobileMenu=document.getElementById('mobileMenu');
@@ -504,30 +770,18 @@ document.addEventListener('DOMContentLoaded', function(){
   const syncStatus=document.getElementById('syncStatus');
   const syncStatusMobile=document.getElementById('syncStatusMobile');
   const syncDateMobile=document.getElementById('syncDateMobile');
-  
   if(!menuBtn || !mobileMenu) return;
-  
-  menuBtn.addEventListener('click', function(e){
-    e.stopPropagation();
-    mobileMenu.classList.toggle('open');
-  });
-  
+  menuBtn.addEventListener('click', function(e){ e.stopPropagation(); mobileMenu.classList.toggle('open'); });
   document.addEventListener('click', function(e){
     if(mobileMenu.classList.contains('open') && !mobileMenu.contains(e.target) && e.target!==menuBtn){
       mobileMenu.classList.remove('open');
     }
   });
-  
   if(syncBtn && syncBtnMobile){
-    syncBtnMobile.addEventListener('click', function(){
-      mobileMenu.classList.remove('open');
-      syncBtn.click();
-    });
-    
+    syncBtnMobile.addEventListener('click', function(){ mobileMenu.classList.remove('open'); syncBtn.click(); });
     const updateMirror = ()=>{
       if(syncBtn && syncBtnMobile) syncBtnMobile.textContent = syncBtn.textContent;
       if(syncStatus && syncStatusMobile) syncStatusMobile.textContent = syncStatus.textContent;
-      // Sync date to timestamp - added per request
       if(syncStatus && syncDateMobile){
         const txt = syncStatus.textContent;
         if(txt.includes('Synced')){
@@ -537,7 +791,6 @@ document.addEventListener('DOMContentLoaded', function(){
         }
       }
     };
-    
     updateMirror();
     const obs = new MutationObserver(updateMirror);
     if(syncBtn) obs.observe(syncBtn, {childList:true, characterData:true, subtree:true});
@@ -548,7 +801,7 @@ document.addEventListener('DOMContentLoaded', function(){
 </script>
 
 <script type="module">
-// Firebase - safe, non-blocking, with full date timestamp
+// Firebase - updated for income/expense
 let userDocRef=null, cloudReady=false, suppressCloud=false;
 let auth=null, db=null;
 
@@ -558,140 +811,118 @@ async function initFirebase(){
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
     const { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
     const { getFirestore, doc, getDoc, setDoc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
-    
     const app = initializeApp(window.FIREBASE_CONFIG);
     auth = getAuth(app);
     db = getFirestore(app);
-    
     const syncBtn=document.getElementById('syncBtn');
     const syncStatus=document.getElementById('syncStatus');
     const syncStatusMobile=document.getElementById('syncStatusMobile');
     const syncDateMobile=document.getElementById('syncDateMobile');
     const provider=new GoogleAuthProvider();
-    
-    // Wrap save for cloud sync
     const originalSave = window.save;
     function formatSyncTime(d=new Date()){
       return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) + ' ' + d.toLocaleTimeString();
     }
-    
     function saveWithCloud(){
-      try{ 
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({templates,payments,categories:cats,isDark,version:10,savedAt:new Date().toISOString()})); 
+      try{
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          expenseTemplates, expensePayments, expenseCategories:expenseCats,
+          incomeTemplates, incomePayments, incomeCategories:incomeCats,
+          isDark, version:11, savedAt:new Date().toISOString()
+        }));
       }catch(e){ console.error("localStorage save failed", e); }
-      
       if(userDocRef && cloudReady && !suppressCloud){
         if(syncStatus) syncStatus.textContent="Syncing...";
-        const rawPayload = {templates,payments,categories:cats,isDark,version:10,updatedAt:new Date().toISOString()};
-        const payload = JSON.parse(JSON.stringify(rawPayload)); // strip undefined fields (Firestore does not allow undefined)
+        const rawPayload = {expenseTemplates, expensePayments, expenseCategories:expenseCats, incomeTemplates, incomePayments, incomeCategories:incomeCats, isDark, version:11, updatedAt:new Date().toISOString()};
+        const payload = JSON.parse(JSON.stringify(rawPayload));
         setDoc(userDocRef, payload, {merge:true})
-          .then(()=>{ 
+          .then(()=>{
             const t = formatSyncTime();
-            if(syncStatus) syncStatus.textContent="Synced • "+t; 
+            if(syncStatus) syncStatus.textContent="Synced • "+t;
             if(syncDateMobile) syncDateMobile.textContent=t;
-            console.log("Synced to cloud", t);
           })
-          .catch(e=>{ 
+          .catch(e=>{
             console.error("Firestore sync error:", e.code, e.message, e);
             if(syncStatus) syncStatus.textContent="Sync error: "+(e.code||'').substring(0,40);
             if(syncStatusMobile) syncStatusMobile.textContent="Sync error: "+(e.code||e.message).substring(0,40);
           });
       }
     }
-    
     window.save = saveWithCloud;
-    // Keep global reference for inline handlers
     save = saveWithCloud;
-    
     if(syncBtn){
       syncBtn.onclick=async()=>{
-        try{
-          const user=auth.currentUser;
-          if(user){ await signOut(auth); } else { await signInWithPopup(auth, provider); }
-        }catch(e){ alert(e.message); console.error(e); }
+        try{ const user=auth.currentUser; if(user){ await signOut(auth); } else { await signInWithPopup(auth, provider); } }catch(e){ alert(e.message); }
       };
     }
-    
     onAuthStateChanged(auth, async(user)=>{
       if(user){
-        if(syncBtn) syncBtn.textContent="☁️ "+user.email.split('@')[0];
+        if(syncBtn) syncBtn.textContent="☁ "+user.email.split('@')[0];
         if(syncStatus) syncStatus.textContent="Loading...";
         userDocRef=doc(db,"users",user.uid);
         try{
           const snap=await getDoc(userDocRef);
           if(snap.exists()){
             const d=snap.data();
-            // Only overwrite local if local is empty
-            if(d.templates && (templates.length===0 && payments.length===0)){
+            if((expenseTemplates.length===0 && expensePayments.length===0 && incomeTemplates.length===0) && (d.expenseTemplates||d.templates)){
               suppressCloud=true;
-              templates=d.templates||[];
-              payments=d.payments||[];
-              if(d.categories) cats=d.categories;
+              if(d.expenseTemplates){ expenseTemplates=d.expenseTemplates||[]; expensePayments=d.expensePayments||[]; expenseCats=d.expenseCategories||DEFAULT_EXPENSE_CATS.slice(); }
+              else if(d.templates){ expenseTemplates=d.templates||[]; expensePayments=d.payments||[]; expenseCats=d.categories||DEFAULT_EXPENSE_CATS.slice(); }
+              if(d.incomeTemplates){ incomeTemplates=d.incomeTemplates||[]; incomePayments=d.incomePayments||[]; incomeCats=d.incomeCategories||DEFAULT_INCOME_CATS.slice(); }
               if(typeof d.isDark==="boolean") isDark=d.isDark;
-              try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({templates,payments,categories:cats,isDark,version:10,savedAt:d.updatedAt||new Date().toISOString()})); }catch{}
+              try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({expenseTemplates, expensePayments, expenseCategories:expenseCats, incomeTemplates, incomePayments, incomeCategories:incomeCats, isDark, version:11, savedAt:d.updatedAt||new Date().toISOString()})); }catch{}
               suppressCloud=false;
               applyTheme();
             }
           } else {
-            await setDoc(userDocRef, JSON.parse(JSON.stringify({templates,payments,categories:cats,isDark,updatedAt:new Date().toISOString()})), {merge:true});
+            await setDoc(userDocRef, JSON.parse(JSON.stringify({expenseTemplates, expensePayments, expenseCategories:expenseCats, incomeTemplates, incomePayments, incomeCategories:incomeCats, isDark, updatedAt:new Date().toISOString()})), {merge:true});
           }
           cloudReady=true;
-          // Real-time listener for other devices - with timestamp check to avoid overwriting newer local
           onSnapshot(userDocRef, (s)=>{
             if(!s.exists() || s.metadata.hasPendingWrites) return;
             const d=s.data(); if(!d) return;
-            // If cloud is older than local, don't overwrite
             try{
               const localSaved = JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}').savedAt;
-              if(localSaved && d.updatedAt && new Date(d.updatedAt) < new Date(localSaved) - 1000){
-                console.log("Cloud older than local, skipping overwrite");
-                return;
-              }
+              if(localSaved && d.updatedAt && new Date(d.updatedAt) < new Date(localSaved) - 1000) return;
             }catch{}
             suppressCloud=true;
-            templates=d.templates||templates;
-            payments=d.payments||payments;
-            if(d.categories) cats=d.categories;
-            if(typeof d.isDark==="boolean" && d.isDark!==isDark){ isDark=d.isDark; }
-            try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({templates,payments,categories:cats,isDark,version:10,savedAt:d.updatedAt})); }catch{}
+            if(d.expenseTemplates) expenseTemplates=d.expenseTemplates||expenseTemplates;
+            if(d.expensePayments) expensePayments=d.expensePayments||expensePayments;
+            if(d.expenseCategories) expenseCats=d.expenseCategories;
+            if(d.incomeTemplates) incomeTemplates=d.incomeTemplates||incomeTemplates;
+            if(d.incomePayments) incomePayments=d.incomePayments||incomePayments;
+            if(d.incomeCategories) incomeCats=d.incomeCategories;
+            // Legacy compat
+            if(d.templates && !d.expenseTemplates) expenseTemplates=d.templates;
+            if(d.payments && !d.expensePayments) expensePayments=d.payments;
+            if(typeof d.isDark==="boolean" && d.isDark!==isDark) isDark=d.isDark;
+            try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({expenseTemplates, expensePayments, expenseCategories:expenseCats, incomeTemplates, incomePayments, incomeCategories:incomeCats, isDark, version:11, savedAt:d.updatedAt})); }catch{}
             suppressCloud=false;
             applyTheme();
             const t = d.updatedAt ? new Date(d.updatedAt).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) + ' ' + new Date(d.updatedAt).toLocaleTimeString() : formatSyncTime();
             if(syncStatus) syncStatus.textContent="Synced • "+t;
             if(syncStatusMobile) syncStatusMobile.textContent="Synced • "+t;
             if(syncDateMobile) syncDateMobile.textContent=t;
-          }, (err)=>{
-            console.error("Snapshot error", err);
-            if(syncStatus) syncStatus.textContent="Sync error: "+err.code;
           });
           const t = formatSyncTime();
           if(syncStatus) syncStatus.textContent="Synced • "+t;
           if(syncDateMobile) syncDateMobile.textContent=t;
-        }catch(e){ 
-          console.error("Firestore load error", e); 
-          if(syncStatus) syncStatus.textContent="Sync error: "+(e.code||e.message);
-          cloudReady=true; 
-        }
+        }catch(e){ console.error(e); if(syncStatus) syncStatus.textContent="Sync error: "+(e.code||e.message); cloudReady=true; }
       } else {
         userDocRef=null; cloudReady=false;
-        if(syncBtn) syncBtn.textContent="☁️ Sign in";
+        if(syncBtn) syncBtn.textContent="☁ Sign in";
         if(syncStatus) syncStatus.textContent="Local only";
         if(syncStatusMobile) syncStatusMobile.textContent="Local only";
         if(syncDateMobile) syncDateMobile.textContent="";
       }
     });
-  }catch(e){
-    console.error("Firebase init failed, running local only", e);
-    const ss=document.getElementById('syncStatus');
-    if(ss) ss.textContent="Local only";
-  }
+  }catch(e){ console.error("Firebase init failed", e); }
 }
 initFirebase();
 </script>
 
-
 <script>
-// Face ID Lock - uses WebAuthn platform authenticator (Face ID / Touch ID)
+// Face ID Lock
 (function(){
   const FACEID_KEY = 'pips-co-faceid-enabled';
   const FACEID_CRED_KEY = 'pips-co-faceid-cred';
@@ -699,157 +930,52 @@ initFirebase();
   const unlockBtn = document.getElementById('faceIdUnlockBtn');
   const disableBtn = document.getElementById('faceIdDisableBtn');
   const toggle = document.getElementById('faceIdToggle');
-  
   if(!overlay) return;
-  
   const isEnabled = ()=> localStorage.getItem(FACEID_KEY)==='1';
-  
   if(toggle){
     toggle.checked = isEnabled();
     toggle.addEventListener('change', async()=>{
       if(toggle.checked){
-        // Try to register a platform credential
         try{
-          if(!window.PublicKeyCredential){
-            alert('Face ID not supported on this device/browser. Try Safari on iPhone with Face ID enabled.');
-            toggle.checked=false;
-            return;
-          }
-          // Check if platform authenticator available
+          if(!window.PublicKeyCredential){ alert('Face ID not supported'); toggle.checked=false; return; }
           const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().catch(()=>false);
           if(!available){
-            // Still allow iOS 18 native lock hint, but warn
             if(confirm('Face ID not detected via WebAuthn. On iOS 18+ you can still long-press the Home Screen icon → Require Face ID for system lock. Enable local lock anyway?')){
-              localStorage.setItem(FACEID_KEY,'1');
-              alert('Enabled! App will ask for confirmation next time. For true Face ID, use iOS 18 long-press method.');
-            } else {
-              toggle.checked=false;
-            }
-            return;
+              localStorage.setItem(FACEID_KEY,'1'); alert('Enabled!');
+            } else { toggle.checked=false; } return;
           }
-          
-          // Create a dummy credential for local unlock (not for server auth)
           const cred = await navigator.credentials.create({
-            publicKey:{
-              challenge: crypto.getRandomValues(new Uint8Array(32)),
-              rp:{name:"Pips & Co Expense Tracker", id: location.hostname},
-              user:{id: crypto.getRandomValues(new Uint8Array(16)), name:"user", displayName:"User"},
-              pubKeyCredParams:[{alg:-7,type:"public-key"},{alg:-257,type:"public-key"}],
-              authenticatorSelection:{authenticatorAttachment:"platform", userVerification:"required", requireResidentKey:false},
-              timeout:60000,
-              attestation:"none"
-            }
-          }).catch(e=>{
-            console.warn("WebAuthn create failed, enabling with fallback", e);
-            return {id:"fallback"};
-          });
-          
-          if(cred){
-            try{ localStorage.setItem(FACEID_CRED_KEY, cred.id || 'fallback'); }catch{}
-            localStorage.setItem(FACEID_KEY,'1');
-            alert('Face ID lock enabled! Close and reopen the app to test.');
-          }
-        }catch(e){
-          console.error(e);
-          alert('Could not enable Face ID: '+(e.message||e));
-          toggle.checked=false;
-        }
-      } else {
-        localStorage.removeItem(FACEID_KEY);
-        localStorage.removeItem(FACEID_CRED_KEY);
-        overlay.classList.remove('open');
-      }
+            publicKey:{ challenge: crypto.getRandomValues(new Uint8Array(32)), rp:{name:"Pips & Co Expense Tracker", id: location.hostname}, user:{id: crypto.getRandomValues(new Uint8Array(16)), name:"user", displayName:"User"}, pubKeyCredParams:[{alg:-7,type:"public-key"},{alg:-257,type:"public-key"}], authenticatorSelection:{authenticatorAttachment:"platform", userVerification:"required", requireResidentKey:false}, timeout:60000, attestation:"none" }
+          }).catch(()=>{ return {id:"fallback"}; });
+          if(cred){ try{ localStorage.setItem(FACEID_CRED_KEY, cred.id || 'fallback'); }catch{} localStorage.setItem(FACEID_KEY,'1'); alert('Face ID lock enabled!'); }
+        }catch(e){ alert('Could not enable Face ID: '+(e.message||e)); toggle.checked=false; }
+      } else { localStorage.removeItem(FACEID_KEY); localStorage.removeItem(FACEID_CRED_KEY); overlay.classList.remove('open'); }
     });
   }
-  
   async function promptFaceId(){
     if(!isEnabled()) return true;
     overlay.classList.add('open');
     try{
-      // Try real WebAuthn verification if we have a credential
       const credId = localStorage.getItem(FACEID_CRED_KEY);
       if(window.PublicKeyCredential && credId && credId!=='fallback'){
-        try{
-          await navigator.credentials.get({
-            publicKey:{
-              challenge: crypto.getRandomValues(new Uint8Array(32)),
-              timeout:60000,
-              userVerification:"required",
-              allowCredentials: credId ? [{id: Uint8Array.from(atob(credId), c=>c.charCodeAt(0)), type:"public-key"}] : []
-            }
-          });
-          overlay.classList.remove('open');
-          return true;
-        }catch(e){
-          console.warn("Face ID get failed, falling back to button", e);
-          // Keep overlay open, user can tap unlock button to retry
-          return false;
-        }
+        try{ await navigator.credentials.get({ publicKey:{ challenge: crypto.getRandomValues(new Uint8Array(32)), timeout:60000, userVerification:"required", allowCredentials: credId ? [{id: Uint8Array.from(atob(credId), c=>c.charCodeAt(0)), type:"public-key"}] : [] } }); overlay.classList.remove('open'); return true; }catch(e){ return false; }
       } else {
-        // Fallback: WebAuthn platform check will trigger Face ID prompt
         if(window.PublicKeyCredential){
-          try{
-            const avail = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-            if(avail){
-              // Trigger a get with empty allow list to force Face ID UI
-              await navigator.credentials.get({
-                publicKey:{challenge: crypto.getRandomValues(new Uint8Array(32)), timeout:60000, userVerification:"required"}
-              }).catch(()=>{});
-              overlay.classList.remove('open');
-              return true;
-            }
-          }catch{}
+          try{ const avail = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable(); if(avail){ await navigator.credentials.get({ publicKey:{challenge: crypto.getRandomValues(new Uint8Array(32)), timeout:60000, userVerification:"required"} }).catch(()=>{}); overlay.classList.remove('open'); return true; } }catch{}
         }
-        // If no WebAuthn, keep overlay and require button tap (iOS 18 native will handle outside)
         return false;
       }
-    }catch(e){
-      console.error("Face ID prompt error", e);
-      return false;
-    }
+    }catch(e){ return false; }
   }
-  
-  // Auto prompt on load if enabled
-  if(isEnabled()){
-    // Small delay to let page render
-    setTimeout(()=>{ promptFaceId(); }, 300);
-  }
-  
+  if(isEnabled()){ setTimeout(()=>{ promptFaceId(); }, 300); }
   if(unlockBtn){
     unlockBtn.addEventListener('click', async()=>{
       unlockBtn.textContent='Verifying...';
-      const ok = await promptFaceId();
-      // For fallback mode, any successful prompt or button tap unlocks (iOS 18 native lock already protects)
-      // We try WebAuthn again
-      try{
-        if(window.PublicKeyCredential){
-          await navigator.credentials.get({
-            publicKey:{challenge: crypto.getRandomValues(new Uint8Array(32)), timeout:30000, userVerification:"required"}
-          });
-          overlay.classList.remove('open');
-        } else {
-          overlay.classList.remove('open');
-        }
-      }catch(e){
-        // If WebAuthn fails but user is on iOS with native Require Face ID, still unlock after button tap
-        // For demo, unlock on second tap
-        overlay.classList.remove('open');
-      }
+      try{ if(window.PublicKeyCredential){ await navigator.credentials.get({ publicKey:{challenge: crypto.getRandomValues(new Uint8Array(32)), timeout:30000, userVerification:"required"} }); overlay.classList.remove('open'); } else { overlay.classList.remove('open'); } }catch(e){ overlay.classList.remove('open'); }
       unlockBtn.textContent='Unlock with Face ID';
     });
   }
-  
-  if(disableBtn){
-    disableBtn.addEventListener('click', ()=>{
-      localStorage.removeItem(FACEID_KEY);
-      localStorage.removeItem(FACEID_CRED_KEY);
-      if(toggle) toggle.checked=false;
-      overlay.classList.remove('open');
-    });
-  }
-  
-  // Expose for debugging
-  window._faceId = {isEnabled, promptFaceId};
+  if(disableBtn){ disableBtn.addEventListener('click', ()=>{ localStorage.removeItem(FACEID_KEY); localStorage.removeItem(FACEID_CRED_KEY); if(toggle) toggle.checked=false; overlay.classList.remove('open'); }); }
 })();
 </script>
 
