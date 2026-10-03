@@ -234,9 +234,18 @@ function getDue(tpl,mStr){
   let {y,m}=parseM(mStr);
   let dueY=due.getFullYear(), dueM=due.getMonth();
   let diff=(y-dueY)*12 + (m-dueM);
-  if(diff<0) return null;
   let rec=tpl.recurrence||"none";
-  if(rec==="none"){ if(diff===0) return new Date(y,m,Math.min(due.getDate(),dim(y,m))); return null; }
+  // Allow backdated: if diff<0 (activeMonth before due), don't show
+  if(diff<0) return null;
+  if(rec==="none"){
+    // For non-recurring, show in its due month, OR in current month as overdue if backdated
+    if(diff===0) return new Date(y,m,Math.min(due.getDate(),dim(y,m)));
+    // Backdated support: if activeMonth is current month and due is in past, show as overdue in current month
+    if(mStr===curM() && diff>0){
+      return new Date(y,m,Math.min(due.getDate(),dim(y,m)));
+    }
+    return null;
+  }
   if(rec==="yearly"){ if(diff%12!==0) return null; return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
   if(rec==="quarterly"){ if(diff%3!==0) return null; return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
   if(rec==="semiannually"){ if(diff%6!==0) return null; return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
@@ -250,7 +259,8 @@ function renderTotals(){
  let filtered=filterCat? templates.filter(t=>t.category===filterCat): templates;
  filtered.forEach(t=>{
    let createdM = t.createdAt ? t.createdAt.slice(0,7) : null;
-   if(createdM && createdM > activeMonth) return;
+   // Only hide no-due items that were created after activeMonth
+   if(!t.dueDate && createdM && createdM > activeMonth) return;
    if(!t.dueDate){ nodue.push({tpl:t,paid:isPaid(t.id,activeMonth),amt:dispAmt(t,activeMonth)}); return;}
    let due=getDue(t,activeMonth); if(!due) return;
    dated.push({tpl:t,due,paid:isPaid(t.id,activeMonth),amt:dispAmt(t,activeMonth)});
@@ -295,7 +305,7 @@ function iconTrash(){return `<svg width="13" height="13" viewBox="0 0 24 24" fil
 function iconCal(){return `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`}
 function rowHtml({tpl,due,paid,amt,dueSoon,overdue}){
  let cls="item"+(paid?" paid":"")+(overdue&&!paid?" overdue":"")+(dueSoon&&!paid?" duesoon":"");
- let dueLabel=due? `${due.toLocaleDateString(undefined,{month:"short",day:"numeric"})} • ${tpl.recurrence}` : `No due date${tpl.recurrence!=="none"?` • ${tpl.recurrence}`:""}`;
+ let dueLabel=due? `${due.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"}).replace(',','')} • ${tpl.recurrence}` : `No due date${tpl.recurrence!=="none"?` • ${tpl.recurrence}`:""}`;
  let badges=`<span class="badge">${tpl.category}</span>`+(dueSoon?`<span class="badge badge-amber">Due soon</span>`:"")+(overdue&&!paid?`<span class="badge badge-red">Overdue</span>`:"");
  return `<div class="${cls}"><div class="circle ${paid?"checked":""}" data-toggle="${tpl.id}">${paid?"✓":""}</div><div style="flex:1;min-width:0"><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap"><span style="font-weight:600;font-size:12px;${paid?"text-decoration:line-through;opacity:.7":""}">${tpl.name}</span>${badges}</div><div style="font-size:10px;color:var(--muted);display:flex;gap:4px;align-items:center;margin-top:2px">${iconCal()} ${dueLabel}</div></div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0"><span style="font-weight:600;font-size:12px;${paid?"text-decoration:line-through;opacity:.7":""}">$${amt.toFixed(2)}</span><button class="icon-btn" data-edit="${tpl.id}">${iconPencil()}</button><button class="icon-btn" data-del="${tpl.id}">${iconTrash()}</button></div></div>`;
 }
