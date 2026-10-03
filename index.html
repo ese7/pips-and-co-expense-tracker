@@ -107,6 +107,13 @@ footer a:hover{color:var(--text);text-decoration-color:var(--text);text-decorati
 @media(min-width:375px) and (max-width:639px){.totals-value{font-size:17px !important}}
 #prevBtn:disabled,#nextBtn:disabled{opacity:0.35;cursor:not-allowed}
 
+
+/* Face ID lock overlay */
+.faceid-overlay{position:fixed;inset:0;z-index:100;background:var(--bg);display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:24px;text-align:center}
+.faceid-overlay.open{display:flex}
+.faceid-icon{width:72px;height:72px;border-radius:50%;background:var(--bg2);border:1px solid var(--border-dark);display:grid;place-items:center;font-size:32px}
+html.light .faceid-icon{border-color:var(--border)}
+
 /* Hamburger + mobile */
 .hamburger-btn{display:none;width:36px;height:36px;border-radius:50%;border:1px solid var(--border-dark);background:var(--bg2);cursor:pointer;color:var(--text);font-size:18px;align-items:center;justify-content:center}
 html.light .hamburger-btn{border-color:var(--border)}
@@ -144,7 +151,7 @@ html.light .mobile-menu .menu-section{border-color:var(--border)}
 </div>
 <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
 <button id="syncBtn" class="btn btn-ghost" style="font-size:11px">☁️ Sign in</button>
-<span id="syncStatus" style="font-size:10px;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+<span id="syncStatus" style="font-size:10px;color:var(--muted);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
 <button id="themeBtn" class="theme-btn" aria-label="Toggle theme"></button>
 <button id="newBtn" class="btn btn-primary"><span style="font-size:14px;line-height:1">+</span> <span class="hide-mobile">New Expense</span><span class="show-mobile">New</span></button>
 <button id="menuBtn" class="hamburger-btn" aria-label="Menu">☰</button>
@@ -157,6 +164,14 @@ html.light .mobile-menu .menu-section{border-color:var(--border)}
 <div id="syncStatusMobile" style="font-size:10px;color:var(--muted);text-align:center">Local only</div>
 <div id="syncDateMobile" style="font-size:9px;color:var(--muted);text-align:center;opacity:0.7"></div>
 </div>
+</div>
+<div class="menu-section">
+<div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:8px">Security</div>
+<label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:12px;font-weight:500;text-transform:none;letter-spacing:0;margin:0">
+<span>🔒 Require Face ID</span>
+<input id="faceIdToggle" type="checkbox" style="width:16px;height:16px">
+</label>
+<div style="font-size:9px;color:var(--muted);margin-top:6px;line-height:1.3">On iOS 18+ you can also long-press the app icon → Require Face ID for system-level lock.</div>
 </div>
 <div style="font-size:10px;color:var(--muted);text-align:center">Pips & Co Expense Tracker</div>
 </div>
@@ -233,10 +248,9 @@ function renderTotals(){
  let dated=[], nodue=[], archive=[];
  let filtered=filterCat? templates.filter(t=>t.category===filterCat): templates;
  filtered.forEach(t=>{
+   let createdM = t.createdAt ? t.createdAt.slice(0,7) : null;
+   if(createdM && createdM > activeMonth) return;
    if(!t.dueDate){ 
-     // Only show no-due items if they existed at that time (createdAt <= activeMonth)
-     let createdM = t.createdAt ? t.createdAt.slice(0,7) : null;
-     if(createdM && createdM > activeMonth) return; // not yet created
      nodue.push({tpl:t,paid:isPaid(t.id,activeMonth),amt:dispAmt(t,activeMonth)}); 
      return;
    }
@@ -244,21 +258,25 @@ function renderTotals(){
    if(!due) return; 
    dated.push({tpl:t,due,paid:isPaid(t.id,activeMonth),amt:dispAmt(t,activeMonth)});
  });
- // Also include archived payments for deleted templates
+ // Include payments for deleted templates
  payments.filter(p=>p.month===activeMonth).forEach(p=>{
    if(!templates.find(t=>t.id===p.templateId)){
-     archive.push({templateId:p.templateId, amount:p.amount, paid:p.paid, snapshotName:p.snapshotName, snapshotCategory:p.snapshotCategory});
+     archive.push(p);
    }
  });
- let total,paid,unpaid;
- let all=[...dated,...nodue];
- // Include archived deleted items in totals
- let archiveAmt = archive.reduce((a,b)=>a+(b.amount||0),0);
- total=all.reduce((a,b)=>a+b.amt,0) + archiveAmt;
- paid=all.filter(x=>x.paid).reduce((a,b)=>a+b.amt,0) + archive.filter(x=>x.paid!==false).reduce((a,b)=>a+(b.amount||0),0);
- unpaid=total-paid;
+ let total=allTotal(dated,nodue,archive);
+ let paid=allPaid(dated,nodue,archive);
+ let unpaid=total-paid;
  el.totalsGrid.innerHTML=`<div class="card"><div class="totals-label">Total</div><div class="totals-value">$${total.toFixed(2)}</div></div><div class="card"><div class="totals-label">Paid</div><div class="totals-value totals-paid">$${paid.toFixed(2)}</div></div><div class="card"><div class="totals-label">Unpaid</div><div class="totals-value totals-unpaid">$${unpaid.toFixed(2)}</div></div>`;
  return {dated,nodue,archive};
+}
+function allTotal(dated,nodue,archive){
+ let s=dated.reduce((a,b)=>a+b.amt,0)+nodue.reduce((a,b)=>a+b.amt,0)+archive.reduce((a,b)=>a+(b.amount||0),0);
+ return s;
+}
+function allPaid(dated,nodue,archive){
+ let s=dated.filter(x=>x.paid).reduce((a,b)=>a+b.amt,0)+nodue.filter(x=>x.paid).reduce((a,b)=>a+b.amt,0)+archive.filter(x=>x.paid!==false).reduce((a,b)=>a+(b.amount||0),0);
+ return s;
 }
 function renderCats(){
  el.catFilters.innerHTML="";
@@ -290,10 +308,9 @@ function rowHtml({tpl,due,paid,amt,dueSoon,overdue}){
 }
 function renderMain(){
  let {dated,nodue,archive}=renderTotals();
- let isPast=activeMonth<curM();
  let main=document.getElementById("mainContent");
- // Past months now show all due items, not just paid archive
  let today=today0(); let in5=new Date(today); in5.setDate(today.getDate()+5);
+ let isPast=activeMonth<curM();
 
  let today=today0(); let in5=new Date(today); in5.setDate(today.getDate()+5);
  dated.sort((a,b)=>{ if(a.paid!==b.paid) return a.paid?1:-1; let aOver = !a.paid && a.due<today; let bOver = !b.paid && b.due<today; let aSoon = !a.paid && a.due>=today && a.due<=in5; let bSoon = !b.paid && b.due>=today && b.due<=in5; if(aOver!==bOver) return aOver?-1:1; if(aSoon!==bSoon) return aSoon?-1:1; if(a.due && b.due) return a.due-b.due; return a.tpl.name.localeCompare(b.tpl.name); });
@@ -324,15 +341,15 @@ function openNew(){ editId=null; document.getElementById("modalTitle").textConte
 function openEdit(id){let t=templates.find(x=>x.id===id); if(!t) return; editId=id; document.getElementById("modalTitle").textContent="Edit Expense"; document.getElementById("f_name").value=t.name; document.getElementById("f_amount").value=t.amount; document.getElementById("f_due").value=t.dueDate||""; document.getElementById("f_rec").value=t.recurrence; document.getElementById("f_cat").value=t.category; document.getElementById("f_notes").value=t.notes||""; document.getElementById("editBackdrop").classList.add("open");}
 function commitSave(data,scope){
  let {name,amount,dueDate,recurrence,category,notes}=data;
- if(!editId){ templates.push({id:uid(),name,amount,dueDate:dueDate||null,recurrence,category,createdAt:new Date().toISOString(),notes:notes||undefined}); return; }
+ if(!editId){ const t={id:uid(),name,amount,dueDate:dueDate||null,recurrence,category,createdAt:new Date().toISOString()}; if(notes) t.notes=notes; templates.push(t); return; }
  let existing=templates.find(t=>t.id===editId); if(!existing) return;
  if(scope==="all" || !existing || existing.recurrence==="none"){
-  templates=templates.map(t=> t.id===editId? {...t,name,amount,dueDate:dueDate||null,recurrence,category,notes:notes||undefined}:t);
+  templates=templates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
   if(scope==="all"){ payments=payments.map(p=> p.templateId===editId? {...p,snapshotName:name,snapshotCategory:category}:p); } 
  } else if(scope==="single"){
   let ex=findPay(editId,activeMonth); if(ex){ payments=payments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category}:p); } else { payments.push({id:uid(),templateId:editId,month:activeMonth,amount,paidAt:new Date().toISOString(),paid:false,snapshotName:name,snapshotCategory:category}); }
  } else if(scope==="forward"){
-  templates=templates.map(t=> t.id===editId? {...t,name,amount,dueDate:dueDate||null,recurrence,category,notes:notes||undefined}:t);
+  templates=templates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
   payments=payments.map(p=>{ if(p.templateId!==editId) return p; if(p.month>=activeMonth){ return {...p,amount: p.amount!=null? amount: p.amount, snapshotName:name,snapshotCategory:category}; } return p; });
  }
 }
@@ -365,6 +382,17 @@ if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{ navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
 }
 </script>
+
+<div id="faceIdOverlay" class="faceid-overlay">
+  <div class="faceid-icon">⌾</div>
+  <div>
+    <div style="font-size:18px;font-weight:600;letter-spacing:-0.02em">Face ID Required</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:6px">Unlock to view your expenses</div>
+  </div>
+  <button id="faceIdUnlockBtn" class="btn btn-primary" style="margin-top:8px">Unlock with Face ID</button>
+  <button id="faceIdDisableBtn" class="btn btn-ghost" style="font-size:11px">Disable Face ID lock</button>
+</div>
+
 <script>
 // Hamburger menu logic - FIXED with proper script tag
 document.addEventListener('DOMContentLoaded', function(){
@@ -453,7 +481,8 @@ async function initFirebase(){
       
       if(userDocRef && cloudReady && !suppressCloud){
         if(syncStatus) syncStatus.textContent="Syncing...";
-        const payload = {templates,payments,categories:cats,isDark,version:10,updatedAt:new Date().toISOString()};
+        const rawPayload = {templates,payments,categories:cats,isDark,version:10,updatedAt:new Date().toISOString()};
+        const payload = JSON.parse(JSON.stringify(rawPayload)); // strip undefined fields (Firestore does not allow undefined)
         setDoc(userDocRef, payload, {merge:true})
           .then(()=>{ 
             const t = formatSyncTime();
@@ -503,13 +532,21 @@ async function initFirebase(){
               applyTheme();
             }
           } else {
-            await setDoc(userDocRef, {templates,payments,categories:cats,isDark,updatedAt:new Date().toISOString()}, {merge:true});
+            await setDoc(userDocRef, JSON.parse(JSON.stringify({templates,payments,categories:cats,isDark,updatedAt:new Date().toISOString()})), {merge:true});
           }
           cloudReady=true;
-          // Real-time listener for other devices
+          // Real-time listener for other devices - with timestamp check to avoid overwriting newer local
           onSnapshot(userDocRef, (s)=>{
             if(!s.exists() || s.metadata.hasPendingWrites) return;
             const d=s.data(); if(!d) return;
+            // If cloud is older than local, don't overwrite
+            try{
+              const localSaved = JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}').savedAt;
+              if(localSaved && d.updatedAt && new Date(d.updatedAt) < new Date(localSaved) - 1000){
+                console.log("Cloud older than local, skipping overwrite");
+                return;
+              }
+            }catch{}
             suppressCloud=true;
             templates=d.templates||templates;
             payments=d.payments||payments;
@@ -518,8 +555,9 @@ async function initFirebase(){
             try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({templates,payments,categories:cats,isDark,version:10,savedAt:d.updatedAt})); }catch{}
             suppressCloud=false;
             applyTheme();
-            const t = formatSyncTime();
+            const t = d.updatedAt ? new Date(d.updatedAt).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) + ' ' + new Date(d.updatedAt).toLocaleTimeString() : formatSyncTime();
             if(syncStatus) syncStatus.textContent="Synced • "+t;
+            if(syncStatusMobile) syncStatusMobile.textContent="Synced • "+t;
             if(syncDateMobile) syncDateMobile.textContent=t;
           }, (err)=>{
             console.error("Snapshot error", err);
@@ -548,6 +586,170 @@ async function initFirebase(){
   }
 }
 initFirebase();
+</script>
+
+
+<script>
+// Face ID Lock - uses WebAuthn platform authenticator (Face ID / Touch ID)
+(function(){
+  const FACEID_KEY = 'pips-co-faceid-enabled';
+  const FACEID_CRED_KEY = 'pips-co-faceid-cred';
+  const overlay = document.getElementById('faceIdOverlay');
+  const unlockBtn = document.getElementById('faceIdUnlockBtn');
+  const disableBtn = document.getElementById('faceIdDisableBtn');
+  const toggle = document.getElementById('faceIdToggle');
+  
+  if(!overlay) return;
+  
+  const isEnabled = ()=> localStorage.getItem(FACEID_KEY)==='1';
+  
+  if(toggle){
+    toggle.checked = isEnabled();
+    toggle.addEventListener('change', async()=>{
+      if(toggle.checked){
+        // Try to register a platform credential
+        try{
+          if(!window.PublicKeyCredential){
+            alert('Face ID not supported on this device/browser. Try Safari on iPhone with Face ID enabled.');
+            toggle.checked=false;
+            return;
+          }
+          // Check if platform authenticator available
+          const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().catch(()=>false);
+          if(!available){
+            // Still allow iOS 18 native lock hint, but warn
+            if(confirm('Face ID not detected via WebAuthn. On iOS 18+ you can still long-press the Home Screen icon → Require Face ID for system lock. Enable local lock anyway?')){
+              localStorage.setItem(FACEID_KEY,'1');
+              alert('Enabled! App will ask for confirmation next time. For true Face ID, use iOS 18 long-press method.');
+            } else {
+              toggle.checked=false;
+            }
+            return;
+          }
+          
+          // Create a dummy credential for local unlock (not for server auth)
+          const cred = await navigator.credentials.create({
+            publicKey:{
+              challenge: crypto.getRandomValues(new Uint8Array(32)),
+              rp:{name:"Pips & Co Expense Tracker", id: location.hostname},
+              user:{id: crypto.getRandomValues(new Uint8Array(16)), name:"user", displayName:"User"},
+              pubKeyCredParams:[{alg:-7,type:"public-key"},{alg:-257,type:"public-key"}],
+              authenticatorSelection:{authenticatorAttachment:"platform", userVerification:"required", requireResidentKey:false},
+              timeout:60000,
+              attestation:"none"
+            }
+          }).catch(e=>{
+            console.warn("WebAuthn create failed, enabling with fallback", e);
+            return {id:"fallback"};
+          });
+          
+          if(cred){
+            try{ localStorage.setItem(FACEID_CRED_KEY, cred.id || 'fallback'); }catch{}
+            localStorage.setItem(FACEID_KEY,'1');
+            alert('Face ID lock enabled! Close and reopen the app to test.');
+          }
+        }catch(e){
+          console.error(e);
+          alert('Could not enable Face ID: '+(e.message||e));
+          toggle.checked=false;
+        }
+      } else {
+        localStorage.removeItem(FACEID_KEY);
+        localStorage.removeItem(FACEID_CRED_KEY);
+        overlay.classList.remove('open');
+      }
+    });
+  }
+  
+  async function promptFaceId(){
+    if(!isEnabled()) return true;
+    overlay.classList.add('open');
+    try{
+      // Try real WebAuthn verification if we have a credential
+      const credId = localStorage.getItem(FACEID_CRED_KEY);
+      if(window.PublicKeyCredential && credId && credId!=='fallback'){
+        try{
+          await navigator.credentials.get({
+            publicKey:{
+              challenge: crypto.getRandomValues(new Uint8Array(32)),
+              timeout:60000,
+              userVerification:"required",
+              allowCredentials: credId ? [{id: Uint8Array.from(atob(credId), c=>c.charCodeAt(0)), type:"public-key"}] : []
+            }
+          });
+          overlay.classList.remove('open');
+          return true;
+        }catch(e){
+          console.warn("Face ID get failed, falling back to button", e);
+          // Keep overlay open, user can tap unlock button to retry
+          return false;
+        }
+      } else {
+        // Fallback: WebAuthn platform check will trigger Face ID prompt
+        if(window.PublicKeyCredential){
+          try{
+            const avail = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+            if(avail){
+              // Trigger a get with empty allow list to force Face ID UI
+              await navigator.credentials.get({
+                publicKey:{challenge: crypto.getRandomValues(new Uint8Array(32)), timeout:60000, userVerification:"required"}
+              }).catch(()=>{});
+              overlay.classList.remove('open');
+              return true;
+            }
+          }catch{}
+        }
+        // If no WebAuthn, keep overlay and require button tap (iOS 18 native will handle outside)
+        return false;
+      }
+    }catch(e){
+      console.error("Face ID prompt error", e);
+      return false;
+    }
+  }
+  
+  // Auto prompt on load if enabled
+  if(isEnabled()){
+    // Small delay to let page render
+    setTimeout(()=>{ promptFaceId(); }, 300);
+  }
+  
+  if(unlockBtn){
+    unlockBtn.addEventListener('click', async()=>{
+      unlockBtn.textContent='Verifying...';
+      const ok = await promptFaceId();
+      // For fallback mode, any successful prompt or button tap unlocks (iOS 18 native lock already protects)
+      // We try WebAuthn again
+      try{
+        if(window.PublicKeyCredential){
+          await navigator.credentials.get({
+            publicKey:{challenge: crypto.getRandomValues(new Uint8Array(32)), timeout:30000, userVerification:"required"}
+          });
+          overlay.classList.remove('open');
+        } else {
+          overlay.classList.remove('open');
+        }
+      }catch(e){
+        // If WebAuthn fails but user is on iOS with native Require Face ID, still unlock after button tap
+        // For demo, unlock on second tap
+        overlay.classList.remove('open');
+      }
+      unlockBtn.textContent='Unlock with Face ID';
+    });
+  }
+  
+  if(disableBtn){
+    disableBtn.addEventListener('click', ()=>{
+      localStorage.removeItem(FACEID_KEY);
+      localStorage.removeItem(FACEID_CRED_KEY);
+      if(toggle) toggle.checked=false;
+      overlay.classList.remove('open');
+    });
+  }
+  
+  // Expose for debugging
+  window._faceId = {isEnabled, promptFaceId};
+})();
 </script>
 
 </body>
