@@ -246,37 +246,28 @@ function earliest(){let ms=payments.map(p=>p.month).filter(Boolean).concat(templ
 function latest(){return addM(curM(),12)}
 function renderTotals(){
  let dated=[], nodue=[], archive=[];
+ // Always show templates that were due in activeMonth, even for past months (fixes September disappearing)
  let filtered=filterCat? templates.filter(t=>t.category===filterCat): templates;
  filtered.forEach(t=>{
    let createdM = t.createdAt ? t.createdAt.slice(0,7) : null;
    if(createdM && createdM > activeMonth) return;
-   if(!t.dueDate){ 
-     nodue.push({tpl:t,paid:isPaid(t.id,activeMonth),amt:dispAmt(t,activeMonth)}); 
-     return;
-   }
-   let due=getDue(t,activeMonth); 
-   if(!due) return; 
+   if(!t.dueDate){ nodue.push({tpl:t,paid:isPaid(t.id,activeMonth),amt:dispAmt(t,activeMonth)}); return;}
+   let due=getDue(t,activeMonth); if(!due) return;
    dated.push({tpl:t,due,paid:isPaid(t.id,activeMonth),amt:dispAmt(t,activeMonth)});
  });
- // Include payments for deleted templates
+ // Keep archive for deleted templates
  payments.filter(p=>p.month===activeMonth).forEach(p=>{
-   if(!templates.find(t=>t.id===p.templateId)){
-     archive.push(p);
+   if(!templates.find(x=>x.id===p.templateId)){
+     let t=templates.find(x=>x.id===p.templateId);
+     let amt=p.amount!=null? p.amount: (t?.amount||0);
+     archive.push({amt,cat:p.snapshotCategory||t?.category||"Other", payment:p});
    }
  });
- let total=allTotal(dated,nodue,archive);
- let paid=allPaid(dated,nodue,archive);
+ let total = dated.reduce((a,b)=>a+b.amt,0)+nodue.reduce((a,b)=>a+b.amt,0)+archive.reduce((a,b)=>a+b.amt,0);
+ let paid = dated.filter(x=>x.paid).reduce((a,b)=>a+b.amt,0)+nodue.filter(x=>x.paid).reduce((a,b)=>a+b.amt,0)+archive.filter(x=>x.payment && x.payment.paid!==false).reduce((a,b)=>a+b.amt,0);
  let unpaid=total-paid;
  el.totalsGrid.innerHTML=`<div class="card"><div class="totals-label">Total</div><div class="totals-value">$${total.toFixed(2)}</div></div><div class="card"><div class="totals-label">Paid</div><div class="totals-value totals-paid">$${paid.toFixed(2)}</div></div><div class="card"><div class="totals-label">Unpaid</div><div class="totals-value totals-unpaid">$${unpaid.toFixed(2)}</div></div>`;
  return {dated,nodue,archive};
-}
-function allTotal(dated,nodue,archive){
- let s=dated.reduce((a,b)=>a+b.amt,0)+nodue.reduce((a,b)=>a+b.amt,0)+archive.reduce((a,b)=>a+(b.amount||0),0);
- return s;
-}
-function allPaid(dated,nodue,archive){
- let s=dated.filter(x=>x.paid).reduce((a,b)=>a+b.amt,0)+nodue.filter(x=>x.paid).reduce((a,b)=>a+b.amt,0)+archive.filter(x=>x.paid!==false).reduce((a,b)=>a+(b.amount||0),0);
- return s;
 }
 function renderCats(){
  el.catFilters.innerHTML="";
@@ -286,7 +277,9 @@ function renderCats(){
  let sel=document.getElementById("f_cat"); sel.innerHTML=""; cats.forEach(c=>{let o=document.createElement("option"); o.value=c; o.textContent=c; sel.appendChild(o);});
 }
 function renderPie(dated,nodue,archive){
- let isPast=activeMonth<curM(); let entries=[]; if(isPast){ entries=archive.map(x=>({cat:x.cat,amt:x.amt})); } else { [...dated,...nodue].forEach(x=>{let cat=x.tpl? x.tpl.category : x.cat; entries.push({cat,amt:x.amt});});}
+ let entries=[]; 
+ [...dated,...nodue].forEach(x=>{let cat=x.tpl? x.tpl.category : x.cat; entries.push({cat,amt:x.amt});});
+ archive.forEach(x=>{ entries.push({cat:x.cat,amt:x.amt}); });
  let map=new Map(); entries.forEach(e=>{map.set(e.cat,(map.get(e.cat)||0)+e.amt)});
  let total=Array.from(map.values()).reduce((a,b)=>a+b,0);
  let data=Array.from(map.entries()).map(([cat,amt],i)=>({cat,amt,pct: total? amt/total*100:0,color:COLORS[cat]||PAL[i%PAL.length]})).sort((a,b)=>b.amt-a.amt);
@@ -312,8 +305,7 @@ function renderMain(){
  let today=today0(); let in5=new Date(today); in5.setDate(today.getDate()+5);
  let isPast=activeMonth<curM();
 
- let today=today0(); let in5=new Date(today); in5.setDate(today.getDate()+5);
- dated.sort((a,b)=>{ if(a.paid!==b.paid) return a.paid?1:-1; let aOver = !a.paid && a.due<today; let bOver = !b.paid && b.due<today; let aSoon = !a.paid && a.due>=today && a.due<=in5; let bSoon = !b.paid && b.due>=today && b.due<=in5; if(aOver!==bOver) return aOver?-1:1; if(aSoon!==bSoon) return aSoon?-1:1; if(a.due && b.due) return a.due-b.due; return a.tpl.name.localeCompare(b.tpl.name); });
+  dated.sort((a,b)=>{ if(a.paid!==b.paid) return a.paid?1:-1; let aOver = !a.paid && a.due<today; let bOver = !b.paid && b.due<today; let aSoon = !a.paid && a.due>=today && a.due<=in5; let bSoon = !b.paid && b.due>=today && b.due<=in5; if(aOver!==bOver) return aOver?-1:1; if(aSoon!==bSoon) return aSoon?-1:1; if(a.due && b.due) return a.due-b.due; return a.tpl.name.localeCompare(b.tpl.name); });
  nodue.sort((a,b)=>{ if(a.paid!==b.paid) return a.paid?1:-1; return a.tpl.name.localeCompare(b.tpl.name); });
  let html="";
  if(nodue.length>0){
