@@ -114,6 +114,12 @@ footer a:hover{color:var(--text);text-decoration-color:var(--text);text-decorati
 .faceid-icon{width:72px;height:72px;border-radius:50%;background:var(--bg2);border:1px solid var(--border-dark);display:grid;place-items:center;font-size:32px}
 html.light .faceid-icon{border-color:var(--border)}
 
+/* PWA - disable logo link */
+@media (display-mode: standalone){
+  .logo-link{pointer-events:none;cursor:default;}
+}
+.pwa .logo-link{pointer-events:none;cursor:default;}
+
 /* Hamburger + mobile */
 .hamburger-btn{display:none;width:36px;height:36px;border-radius:50%;border:1px solid var(--border-dark);background:var(--bg2);cursor:pointer;color:var(--text);font-size:18px;align-items:center;justify-content:center}
 html.light .hamburger-btn{border-color:var(--border)}
@@ -234,23 +240,59 @@ function getDue(tpl,mStr){
   let {y,m}=parseM(mStr);
   let dueY=due.getFullYear(), dueM=due.getMonth();
   let diff=(y-dueY)*12 + (m-dueM);
-  if(diff<0) return null;
   let rec=tpl.recurrence||"none";
-  if(rec==="none"){ if(diff===0) return new Date(y,m,Math.min(due.getDate(),dim(y,m))); return null; }
+  if(diff<0) return null;
+  if(rec==="none"){
+    // Non-recurring: ONLY show in its due month, even if backdated
+    if(diff===0) return new Date(y,m,Math.min(due.getDate(),dim(y,m)));
+    return null;
+  }
   if(rec==="yearly"){ if(diff%12!==0) return null; return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
   if(rec==="quarterly"){ if(diff%3!==0) return null; return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
   if(rec==="semiannually"){ if(diff%6!==0) return null; return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
   return new Date(y,m,Math.min(due.getDate(),dim(y,m)));
 }
-function earliest(){let ms=payments.map(p=>p.month).filter(Boolean).concat(templates.map(t=>t.createdAt?.slice(0,7)).filter(Boolean)); if(ms.length===0) return curM(); return ms.reduce((a,b)=>a<b?a:b,ms[0])}
+function earliest(){
+  let ms=payments.map(p=>p.month).filter(Boolean)
+    .concat(templates.map(t=>t.createdAt?.slice(0,7)).filter(Boolean))
+    .concat(templates.map(t=>t.dueDate?.slice(0,7)).filter(Boolean));
+  if(ms.length===0) return curM();
+  return ms.reduce((a,b)=>a<b?a:b,ms[0]);
+}
 function latest(){return addM(curM(),12)}
 function renderTotals(){
- let isPast=activeMonth<curM(); let dated=[], nodue=[], archive=[];
- if(isPast){archive=payments.filter(p=>p.month===activeMonth && p.paid!==false).map(p=>{let t=templates.find(x=>x.id===p.templateId); let amt=p.amount!=null? p.amount: (t?.amount||0); return {amt,cat:t?.category||p.snapshotCategory||p.category||"Other"}});}
- else {let filtered=filterCat? templates.filter(t=>t.category===filterCat): templates; filtered.forEach(t=>{if(!t.dueDate){ nodue.push({tpl:t,paid:isPaid(t.id,activeMonth),amt:dispAmt(t,activeMonth)}); return;} let due=getDue(t,activeMonth); if(!due) return; dated.push({tpl:t,due,paid:isPaid(t.id,activeMonth),amt:dispAmt(t,activeMonth)});});}
- let total,paid,unpaid;
- if(isPast){ total=archive.reduce((a,b)=>a+b.amt,0); paid=total; unpaid=0;}
- else { let all=[...dated,...nodue]; total=all.reduce((a,b)=>a+b.amt,0); paid=all.filter(x=>x.paid).reduce((a,b)=>a+b.amt,0); unpaid=total-paid; }
+ let dated=[], nodue=[], archive=[];
+ // Always show templates that were due in activeMonth, even for past months (fixes September disappearing)
+ let filtered=filterCat? templates.filter(t=>t.category===filterCat): templates;
+ filtered.forEach(t=>{
+   let createdM = t.createdAt ? t.createdAt.slice(0,7) : null;
+   // Only hide no-due items that were created after activeMonth
+   if(!t.dueDate && createdM && createdM > activeMonth) return;
+   if(!t.dueDate){
+     // Check for single-entry name override
+     let pay=findPay(t.id,activeMonth);
+     let displayTpl = pay?.snapshotName ? {...t, name:pay.snapshotName, category:pay.snapshotCategory||t.category, notes:pay.snapshotNotes||t.notes} : t;
+     nodue.push({tpl:displayTpl,paid:isPaid(t.id,activeMonth),amt:dispAmt(t,activeMonth)});
+     return;
+   }
+   let due=getDue(t,activeMonth); if(!due) return;
+   let pay=findPay(t.id,activeMonth);
+   let displayTpl = pay?.snapshotName ? {...t, name:pay.snapshotName, category:pay.snapshotCategory||t.category, notes:pay.snapshotNotes||t.notes} : t;
+   dated.push({tpl:displayTpl,due,paid:isPaid(t.id,activeMonth),amt:dispAmt(t,activeMonth)});
+ });
+ // Keep archive for deleted templates
+ payments.filter(p=>p.month===activeMonth).forEach(p=>{
+   if(!templates.find(x=>x.id===p.templateId)){
+     let t=templates.find(x=>x.id===p.templateId);
+     let amt=p.amount!=null? p.amount: (t?.amount||0);
+     archive.push({amt,cat:p.snapshotCategory||t?.category||"Other", payment:p});
+   }
+ });
+ // Outstanding (no due date) unpaid should NOT be in totals/pie, only when paid
+ let paidNodue = nodue.filter(x=>x.paid);
+ let total = dated.reduce((a,b)=>a+b.amt,0)+archive.reduce((a,b)=>a+b.amt,0)+paidNodue.reduce((a,b)=>a+b.amt,0);
+ let paid = dated.filter(x=>x.paid).reduce((a,b)=>a+b.amt,0)+archive.filter(x=>x.payment && x.payment.paid!==false).reduce((a,b)=>a+b.amt,0)+paidNodue.reduce((a,b)=>a+b.amt,0);
+ let unpaid=total-paid;
  el.totalsGrid.innerHTML=`<div class="card"><div class="totals-label">Total</div><div class="totals-value">$${total.toFixed(2)}</div></div><div class="card"><div class="totals-label">Paid</div><div class="totals-value totals-paid">$${paid.toFixed(2)}</div></div><div class="card"><div class="totals-label">Unpaid</div><div class="totals-value totals-unpaid">$${unpaid.toFixed(2)}</div></div>`;
  return {dated,nodue,archive};
 }
@@ -262,7 +304,12 @@ function renderCats(){
  let sel=document.getElementById("f_cat"); sel.innerHTML=""; cats.forEach(c=>{let o=document.createElement("option"); o.value=c; o.textContent=c; sel.appendChild(o);});
 }
 function renderPie(dated,nodue,archive){
- let isPast=activeMonth<curM(); let entries=[]; if(isPast){ entries=archive.map(x=>({cat:x.cat,amt:x.amt})); } else { [...dated,...nodue].forEach(x=>{let cat=x.tpl? x.tpl.category : x.cat; entries.push({cat,amt:x.amt});});}
+ let entries=[];
+ // Dated items always in pie
+ dated.forEach(x=>{let cat=x.tpl? x.tpl.category : x.cat; entries.push({cat,amt:x.amt});});
+ // Only paid outstanding (no due date) should be in pie, unpaid should not
+ nodue.filter(x=>x.paid).forEach(x=>{let cat=x.tpl? x.tpl.category : x.cat; entries.push({cat,amt:x.amt});});
+ archive.forEach(x=>{ entries.push({cat:x.cat,amt:x.amt}); });
  let map=new Map(); entries.forEach(e=>{map.set(e.cat,(map.get(e.cat)||0)+e.amt)});
  let total=Array.from(map.values()).reduce((a,b)=>a+b,0);
  let data=Array.from(map.entries()).map(([cat,amt],i)=>({cat,amt,pct: total? amt/total*100:0,color:COLORS[cat]||PAL[i%PAL.length]})).sort((a,b)=>b.amt-a.amt);
@@ -276,33 +323,24 @@ function renderPie(dated,nodue,archive){
 function iconPencil(){return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="M15 5l4 4"/></svg>`}
 function iconTrash(){return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`}
 function iconCal(){return `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`}
-function rowHtml({tpl,due,paid,amt,dueSoon,overdue}){
+function rowHtml({tpl,due,paid,amt,dueSoon,overdue,isOutstanding}){
  let cls="item"+(paid?" paid":"")+(overdue&&!paid?" overdue":"")+(dueSoon&&!paid?" duesoon":"");
- let dueLabel=due? `${due.toLocaleDateString(undefined,{month:"short",day:"numeric"})} • ${tpl.recurrence}` : `No due date${tpl.recurrence!=="none"?` • ${tpl.recurrence}`:""}`;
+ let dueLabel=due? `${due.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"}).replace(',','')} • ${tpl.recurrence}` : `No due date${tpl.recurrence!=="none"?` • ${tpl.recurrence}`:""}`;
  let badges=`<span class="badge">${tpl.category}</span>`+(dueSoon?`<span class="badge badge-amber">Due soon</span>`:"")+(overdue&&!paid?`<span class="badge badge-red">Overdue</span>`:"");
- return `<div class="${cls}"><div class="circle ${paid?"checked":""}" data-toggle="${tpl.id}">${paid?"✓":""}</div><div style="flex:1;min-width:0"><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap"><span style="font-weight:600;font-size:12px;${paid?"text-decoration:line-through;opacity:.7":""}">${tpl.name}</span>${badges}</div><div style="font-size:10px;color:var(--muted);display:flex;gap:4px;align-items:center;margin-top:2px">${iconCal()} ${dueLabel}</div></div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0"><span style="font-weight:600;font-size:12px;${paid?"text-decoration:line-through;opacity:.7":""}">$${amt.toFixed(2)}</span><button class="icon-btn" data-edit="${tpl.id}">${iconPencil()}</button><button class="icon-btn" data-del="${tpl.id}">${iconTrash()}</button></div></div>`;
+ return `<div class="${cls}"><div class="circle ${paid?"checked":""}" data-toggle="${tpl.id}">${paid?"✓":""}</div><div style="flex:1;min-width:0"><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap"><span style="font-weight:600;font-size:12px;${paid?"text-decoration:line-through;opacity:.7":""}">${tpl.name}</span>${badges}</div><div style="font-size:10px;color:var(--muted);display:flex;gap:4px;align-items:center;margin-top:2px">${iconCal()} ${dueLabel}</div></div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0"><span style="font-weight:600;font-size:12px;${paid?"text-decoration:line-through;opacity:.7":(isOutstanding?"color:#f59e0b":"")}">$${amt.toFixed(2)}</span><button class="icon-btn" data-edit="${tpl.id}">${iconPencil()}</button><button class="icon-btn" data-del="${tpl.id}">${iconTrash()}</button></div></div>`;
 }
 function renderMain(){
  let {dated,nodue,archive}=renderTotals();
- let isPast=activeMonth<curM();
  let main=document.getElementById("mainContent");
- if(isPast){
-  if(archive.length===0){ main.innerHTML=`<div class="card" style="text-align:center;padding:24px;color:var(--muted);font-size:11px">No expenses</div>`; return;}
-  let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h2 style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.7;margin:0;font-weight:600">${labelM(activeMonth)}</h2><span style="font-size:10px;color:var(--muted)">Archive</span></div><div style="display:flex;flex-direction:column;gap:6px">`;
-  payments.filter(p=>p.month===activeMonth && p.paid!==false).forEach(p=>{
-   let t=templates.find(x=>x.id===p.templateId) || {id:p.templateId,name:p.snapshotName||"Deleted",category:p.snapshotCategory||"Other",amount:p.amount||0,dueDate:null,recurrence:"none"};
-   let amt=p.amount!=null? p.amount: (t.amount||0);
-   html+=`<div class="item"><div class="circle checked">✓</div><div style="flex:1;min-width:0"><span style="font-weight:600;font-size:12px">${t.name}</span><span class="badge">${t.category}</span></div><div style="font-weight:600;font-size:12px">$${amt.toFixed(2)}</div></div>`;
-  });
-  html+=`</div>`; main.innerHTML=html; return;
- }
  let today=today0(); let in5=new Date(today); in5.setDate(today.getDate()+5);
- dated.sort((a,b)=>{ if(a.paid!==b.paid) return a.paid?1:-1; let aOver = !a.paid && a.due<today; let bOver = !b.paid && b.due<today; let aSoon = !a.paid && a.due>=today && a.due<=in5; let bSoon = !b.paid && b.due>=today && b.due<=in5; if(aOver!==bOver) return aOver?-1:1; if(aSoon!==bSoon) return aSoon?-1:1; if(a.due && b.due) return a.due-b.due; return a.tpl.name.localeCompare(b.tpl.name); });
+ let isPast=activeMonth<curM();
+
+  dated.sort((a,b)=>{ if(a.paid!==b.paid) return a.paid?1:-1; let aOver = !a.paid && a.due<today; let bOver = !b.paid && b.due<today; let aSoon = !a.paid && a.due>=today && a.due<=in5; let bSoon = !b.paid && b.due>=today && b.due<=in5; if(aOver!==bOver) return aOver?-1:1; if(aSoon!==bSoon) return aSoon?-1:1; if(a.due && b.due) return a.due-b.due; return a.tpl.name.localeCompare(b.tpl.name); });
  nodue.sort((a,b)=>{ if(a.paid!==b.paid) return a.paid?1:-1; return a.tpl.name.localeCompare(b.tpl.name); });
  let html="";
  if(nodue.length>0){
   html+=`<div style="margin-bottom:16px"><div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><h2 style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#fbbf24;margin:0;font-weight:700">Outstanding</h2><span class="badge">${nodue.length}</span></div><div style="display:flex;flex-direction:column;gap:6px">`;
-  nodue.forEach(x=>{ html+=rowHtml({tpl:x.tpl,due:null,paid:x.paid,amt:x.amt}); });
+  nodue.forEach(x=>{ html+=rowHtml({tpl:x.tpl,due:null,paid:x.paid,amt:x.amt,isOutstanding:true}); });
   html+=`</div></div>`;
  }
  html+=`<div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="display:flex;gap:6px;align-items:center"><h2 style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.7;margin:0;font-weight:700">This Month</h2><span class="badge">${dated.length}</span></div><span style="font-size:10px;color:var(--muted)">${labelM(activeMonth)}</span></div>`;
@@ -310,7 +348,7 @@ function renderMain(){
  else if(dated.length===0){ html+=`<div class="card" style="border-style:dashed;text-align:center;padding:18px;color:var(--muted);font-size:10px">No dated expenses this month.</div>`; }
  else {
   html+=`<div style="display:flex;flex-direction:column;gap:6px">`;
-  dated.forEach(x=>{ let dueSoon = !x.paid && activeMonth===curM() && x.due>=today && x.due<=in5; let overdue = !x.paid && activeMonth===curM() && x.due<today; html+=rowHtml({tpl:x.tpl,due:x.due,paid:x.paid,amt:x.amt,dueSoon,overdue}); });
+  dated.forEach(x=>{ let dueSoon = !x.paid && x.due>=today && x.due<=in5; let overdue = !x.paid && x.due<today; html+=rowHtml({tpl:x.tpl,due:x.due,paid:x.paid,amt:x.amt,dueSoon,overdue}); });
   html+=`</div>`;
  }
  html+=`</div>`; main.innerHTML=html;
@@ -319,10 +357,61 @@ function renderMain(){
  main.querySelectorAll("[data-del]").forEach(b=>{b.onclick=()=>{deleteTpl(b.dataset.del)}});
 }
 function renderAll(){ let {dated,nodue,archive}=renderTotals(); renderCats(); renderPie(dated,nodue,archive); renderMain(); document.getElementById("monthTitle").textContent=labelM(activeMonth); document.getElementById("jumpNow").style.display= activeMonth!==curM() ? "inline" : "none"; let canPrev=activeMonth<=earliest(); let canNext=activeMonth>=latest(); document.getElementById("prevBtn").disabled=canPrev; document.getElementById("nextBtn").disabled=canNext; }
-function togglePaid(tid){let tpl=templates.find(t=>t.id===tid); let ex=findPay(tid,activeMonth); if(ex){ if(ex.paid){ if(ex.amount!=null){ payments=payments.map(p=>p.id===ex.id? {...p,paid:false,paidAt:new Date().toISOString()}:p); } else { payments=payments.filter(p=>p.id!==ex.id); } } else { payments=payments.map(p=>p.id===ex.id? {...p,paid:true,paidAt:new Date().toISOString()}:p); } } else { payments.push({id:uid(),templateId:tid,month:activeMonth,amount:null,paidAt:new Date().toISOString(),paid:true,snapshotName:tpl?.name,snapshotCategory:tpl?.category}); } save(); renderAll();}
+function togglePaid(tid){
+  let tpl=templates.find(t=>t.id===tid);
+  let ex=findPay(tid,activeMonth);
+  let todayStr=new Date().toISOString().slice(0,10);
+  if(ex){
+    if(ex.paid){
+      if(ex.amount!=null){
+        payments=payments.map(p=>p.id===ex.id? {...p,paid:false,paidAt:new Date().toISOString()}:p);
+      } else {
+        payments=payments.filter(p=>p.id!==ex.id);
+        // If it was a no-due item, clear its due date when un-paid again
+        if(tpl && !tpl.dueDateOriginal && tpl.dueDate){
+          // Keep due date? User said auto-populate when paid, but when un-paid should it clear? We'll keep it to preserve history
+        }
+      }
+    } else {
+      payments=payments.map(p=>p.id===ex.id? {...p,paid:true,paidAt:new Date().toISOString()}:p);
+      // Auto-populate due date for no-due items when marked paid
+      if(tpl && !tpl.dueDate){
+        tpl.dueDate=todayStr;
+        // Mark original state to allow revert if needed
+        tpl.dueDateOriginal=false;
+      }
+    }
+  } else {
+    payments.push({id:uid(),templateId:tid,month:activeMonth,amount:null,paidAt:new Date().toISOString(),paid:true,snapshotName:tpl?.name,snapshotCategory:tpl?.category});
+    // Auto-populate due date for no-due items when marked paid
+    if(tpl && !tpl.dueDate){
+      tpl.dueDate=todayStr;
+    }
+  }
+  save(); renderAll();
+}
 function deleteTpl(id){ if(!confirm("Delete? Past payments preserved.")) return; templates=templates.filter(t=>t.id!==id); save(); renderAll(); }
 function openNew(){ editId=null; document.getElementById("modalTitle").textContent="New Expense"; document.getElementById("f_name").value=""; document.getElementById("f_amount").value=""; document.getElementById("f_due").value=""; document.getElementById("f_rec").value="monthly"; document.getElementById("f_cat").value=cats[0]||"Other"; document.getElementById("f_newcat").value=""; document.getElementById("f_notes").value=""; document.getElementById("editBackdrop").classList.add("open"); }
-function openEdit(id){let t=templates.find(x=>x.id===id); if(!t) return; editId=id; document.getElementById("modalTitle").textContent="Edit Expense"; document.getElementById("f_name").value=t.name; document.getElementById("f_amount").value=t.amount; document.getElementById("f_due").value=t.dueDate||""; document.getElementById("f_rec").value=t.recurrence; document.getElementById("f_cat").value=t.category; document.getElementById("f_notes").value=t.notes||""; document.getElementById("editBackdrop").classList.add("open");}
+function openEdit(id){
+  let t=templates.find(x=>x.id===id); if(!t) return;
+  editId=id;
+  let pay=findPay(id,activeMonth);
+  // For single-entry overrides, show the occurrence's values, not just template
+  let nameVal = pay?.snapshotName || t.name;
+  let amountVal = (pay && pay.amount!=null) ? pay.amount : t.amount;
+  let dueVal = t.dueDate||"";
+  let recVal = t.recurrence;
+  let catVal = pay?.snapshotCategory || t.category;
+  let notesVal = pay?.snapshotNotes || pay?.notes || t.notes || "";
+  document.getElementById("modalTitle").textContent="Edit Expense";
+  document.getElementById("f_name").value=nameVal;
+  document.getElementById("f_amount").value=amountVal;
+  document.getElementById("f_due").value=dueVal;
+  document.getElementById("f_rec").value=recVal;
+  document.getElementById("f_cat").value=catVal;
+  document.getElementById("f_notes").value=notesVal;
+  document.getElementById("editBackdrop").classList.add("open");
+}
 function commitSave(data,scope){
  let {name,amount,dueDate,recurrence,category,notes}=data;
  if(!editId){ const t={id:uid(),name,amount,dueDate:dueDate||null,recurrence,category,createdAt:new Date().toISOString()}; if(notes) t.notes=notes; templates.push(t); return; }
@@ -331,7 +420,13 @@ function commitSave(data,scope){
   templates=templates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
   if(scope==="all"){ payments=payments.map(p=> p.templateId===editId? {...p,snapshotName:name,snapshotCategory:category}:p); } 
  } else if(scope==="single"){
-  let ex=findPay(editId,activeMonth); if(ex){ payments=payments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category}:p); } else { payments.push({id:uid(),templateId:editId,month:activeMonth,amount,paidAt:new Date().toISOString(),paid:false,snapshotName:name,snapshotCategory:category}); }
+  let ex=findPay(editId,activeMonth);
+  // Preserve amount, name, category, notes for this single occurrence
+  if(ex){
+    payments=payments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes:notes}:p);
+  } else {
+    payments.push({id:uid(),templateId:editId,month:activeMonth,amount,paidAt:new Date().toISOString(),paid:false,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes:notes});
+  }
  } else if(scope==="forward"){
   templates=templates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
   payments=payments.map(p=>{ if(p.templateId!==editId) return p; if(p.month>=activeMonth){ return {...p,amount: p.amount!=null? amount: p.amount, snapshotName:name,snapshotCategory:category}; } return p; });
@@ -378,6 +473,28 @@ if('serviceWorker' in navigator){
 </div>
 
 <script>
+// Disable logo link in PWA only
+(function(){
+  function isPWA(){
+    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true || document.referrer.includes('android-app://');
+  }
+  function disableLogoLink(){
+    if(isPWA()){
+      document.documentElement.classList.add('pwa');
+      let logoLink=document.querySelector('.logo-link');
+      if(logoLink){
+        logoLink.addEventListener('click', function(e){ e.preventDefault(); });
+        logoLink.removeAttribute('href');
+        logoLink.style.pointerEvents='none';
+        logoLink.style.cursor='default';
+      }
+    }
+  }
+  document.addEventListener('DOMContentLoaded', disableLogoLink);
+  // Also check on load for iOS
+  if(isPWA()){ document.documentElement.classList.add('pwa'); }
+})();
+
 // Hamburger menu logic - FIXED with proper script tag
 document.addEventListener('DOMContentLoaded', function(){
   const menuBtn=document.getElementById('menuBtn');
