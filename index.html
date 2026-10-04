@@ -156,6 +156,8 @@ html.light .type-toggle button.expense.active{background:#dc2626}
 @media(max-width:639px){
   .modal-row-top{grid-template-columns:1fr 1fr !important}
 }
+.modal label{display:block;margin-bottom:6px !important}
+.modal .input{margin-bottom:0 !important}
 
 </style>
 <script src="./firebase-config.js"></script>
@@ -212,14 +214,14 @@ html.light .type-toggle button.expense.active{background:#dc2626}
 
 <footer style="padding:18px 0;margin-top:18px;border-top:1px solid var(--border-dark)"><div class="container" style="text-align:center;font-size:11px;color:var(--muted)"><div style="font-style:italic;margin-bottom:6px">A simple, powerful recurring budget tracker</div>Built with <span style="color:#ef4444">♥</span> by <a href="https://sitestars.net/" target="_blank">Sitestars</a></div></footer>
 
-<div id="editBackdrop" class="modal-backdrop"><div class="modal"><h3 id="modalTitle" style="margin:0 0 3px 0;font-size:15px;font-weight:600">New Expense</h3><div style="display:grid;gap:10px"><div><label>Name</label><input id="f_name" class="input" placeholder="e.g. Rent, Groceries"></div>
-<div class="modal-row-top" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,0.9fr);gap:8px;min-width:0">
+<div id="editBackdrop" class="modal-backdrop"><div class="modal"><h3 id="modalTitle" style="margin:0 0 3px 0;font-size:15px;font-weight:600">New Expense</h3><div style="display:grid;gap:14px"><div><label>Name</label><input id="f_name" class="input" placeholder="e.g. Rent, Groceries"></div>
+<div class="modal-row-top" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,0.9fr);gap:12px;min-width:0">
   <div style="min-width:0"><label>Amount</label><input id="f_amount" class="input" type="number" step="0.01" placeholder="0.00"></div>
   <div style="min-width:0"><label>Currency</label>
     <div style="display:flex;gap:6px"><select id="f_currency" class="input" style="flex:1"><option value="$">$ USD</option><option value="€">€ EUR</option><option value="£">£ GBP</option><option value="¥">¥ JPY</option><option value="₹">₹ INR</option><option value="A$">A$ AUD</option><option value="C$">C$ CAD</option><option value="₦">₦ NGN</option><option value="R">R ZAR</option><option value="custom">Custom</option></select><input id="f_currency_custom" class="input" placeholder="Symbol" style="display:none;flex:1;min-width:70px"></div>
   </div>
 </div>
-<div style="min-width:0"><label>Due date (optional)</label><input id="f_due" class="input" type="date"></div>
+<div style="min-width:0"><label id="f_due_label">Due date (optional)</label><input id="f_due" class="input" type="date"></div>
 </div>
 <div><label>Recurrence</label><select id="f_rec" class="input"><option value="none">None</option><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="biweekly">Bi-Weekly</option><option value="yearly">Yearly</option><option value="quarterly">Quarterly</option><option value="semiannually">Semi-annually</option></select></div><div><label>Category</label><select id="f_cat" class="input"></select><div style="display:flex;gap:6px;margin-top:6px"><input id="f_newcat" class="input" placeholder="New category" style="flex:1"><button id="addCatBtn" class="btn btn-ghost">Add</button></div></div><div><label>Notes (optional)</label><input id="f_notes" class="input" placeholder="Optional notes"></div>
 <div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="cancelEdit" class="btn btn-ghost">Cancel</button><button id="saveEdit" class="btn btn-primary">Save</button></div>
@@ -649,6 +651,7 @@ function openNew(){
   editType=activeType;
   let isIncome = activeType==='income';
   document.getElementById("modalTitle").textContent=isIncome? "New Income" : "New Expense";
+  document.getElementById("f_due_label").textContent=isIncome? "Expected date (optional)" : "Due date (optional)";
   document.getElementById("f_name").value="";
   document.getElementById("f_amount").value="";
   document.getElementById("f_due").value="";
@@ -661,6 +664,8 @@ function openNew(){
   document.getElementById("f_notes").value="";
   renderCats();
   document.getElementById("editBackdrop").classList.add("open");
+  originalData=null;
+  let saveBtn=document.getElementById("saveEdit"); saveBtn.disabled=false; saveBtn.style.opacity="1"; saveBtn.style.cursor="pointer";
 }
 
 let editOccurrenceIndex = null;
@@ -684,6 +689,7 @@ function openEdit(id, occIdx){
   let notesVal = pay?.snapshotNotes || pay?.notes || t.notes || "";
   let curVal = t.currency || "$";
   document.getElementById("modalTitle").textContent= activeType==='income'? "Edit Income" : "Edit Expense";
+  document.getElementById("f_due_label").textContent= activeType==='income'? "Expected date (optional)" : "Due date (optional)";
   document.getElementById("f_name").value=nameVal;
   document.getElementById("f_amount").value=amountVal;
   document.getElementById("f_due").value=dueVal;
@@ -698,6 +704,7 @@ function openEdit(id, occIdx){
   renderCats();
   document.getElementById("f_cat").value=catVal;
   document.getElementById("editBackdrop").classList.add("open");
+  setTimeout(()=>{ captureOriginalData(); checkIfChanged(); }, 50);
 }
 
 function commitSave(data,scope){
@@ -723,21 +730,25 @@ function commitSave(data,scope){
     else incomePayments=incomePayments.map(p=> p.templateId===editId? {...p,snapshotName:name,snapshotCategory:category,snapshotNotes:notes}:p);
   }
  } else if(scope==="single"){
-  // For bi-weekly/weekly with multiple occurrences, edit only specific occurrence
-  let occIdx = editOccurrenceIndex;
-  let findFn = editType==='expense'? findPayExpense : findPayIncome;
+  let occIdx = (typeof editOccurrenceIndex!=='undefined' && editOccurrenceIndex!==null) ? editOccurrenceIndex : null;
+  // For single entry, we store occurrence-specific override
+  // Find existing override for this exact occurrence
+  let payments = editType==='expense'? expensePayments : incomePayments;
   let ex=null;
   if(occIdx!==null){
-    let payments = editType==='expense'? expensePayments : incomePayments;
     ex=payments.find(p=>p.templateId===editId && p.month===activeMonth && p.occurrenceIndex===occIdx && !p.deleted);
   }
   if(!ex){
-    ex=findFn(editId,activeMonth);
+    // Fallback: generic override for this month (for monthly items)
+    ex=payments.find(p=>p.templateId===editId && p.month===activeMonth && (p.occurrenceIndex===undefined || p.occurrenceIndex===null) && !p.deleted);
   }
   if(ex){
-    if(editType==='expense') expensePayments=expensePayments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes,occurrenceIndex: occIdx!==null? occIdx : p.occurrenceIndex}:p);
-    else incomePayments=incomePayments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes,occurrenceIndex: occIdx!==null? occIdx : p.occurrenceIndex}:p);
+    // Update existing override
+    let updated = {...ex, amount, snapshotName:name, snapshotCategory:category, snapshotNotes:notes, notes, occurrenceIndex: occIdx!==null? occIdx : ex.occurrenceIndex};
+    if(editType==='expense') expensePayments=expensePayments.map(p=> p.id===ex.id? updated : p);
+    else incomePayments=incomePayments.map(p=> p.id===ex.id? updated : p);
   } else {
+    // Create new occurrence-specific override
     let newPay={id:uid(),templateId:editId,month:activeMonth,amount,paidAt:new Date().toISOString(),paid:false,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes,occurrenceIndex: occIdx};
     if(editType==='expense') expensePayments.push(newPay); else incomePayments.push(newPay);
   }
@@ -781,10 +792,56 @@ document.getElementById("addCatBtn").onclick=()=>{
   document.getElementById("f_newcat").value="";
   save();
 };
+let originalData=null;
+function captureOriginalData(){
+  if(!editId){
+    originalData=null; return;
+  }
+  let templates = editType==='expense'? expenseTemplates : incomeTemplates;
+  let t=templates.find(x=>x.id===editId);
+  if(!t){ originalData=null; return; }
+  let payments = editType==='expense'? expensePayments : incomePayments;
+  let pay=null;
+  if(editOccurrenceIndex!==null){
+    pay=payments.find(p=>p.templateId===editId && p.month===activeMonth && p.occurrenceIndex===editOccurrenceIndex && !p.deleted);
+  }
+  if(!pay) pay=payments.find(p=>p.templateId===editId && p.month===activeMonth && !p.deleted);
+  let nameVal = pay?.snapshotName || t.name;
+  let amountVal = (pay && pay.amount!=null) ? pay.amount : t.amount;
+  let dueVal = t.dueDate||"";
+  let recVal = t.recurrence;
+  let catVal = pay?.snapshotCategory || t.category;
+  let notesVal = pay?.snapshotNotes || pay?.notes || t.notes || "";
+  let curVal = t.currency || "$";
+  originalData={name:nameVal, amount:amountVal, dueDate:dueVal, recurrence:recVal, category:catVal, notes:notesVal, currency:curVal};
+}
+function checkIfChanged(){
+  let saveBtn=document.getElementById("saveEdit");
+  if(!editId){ saveBtn.disabled=false; saveBtn.style.opacity="1"; return true; }
+  if(!originalData){ saveBtn.disabled=false; saveBtn.style.opacity="1"; return true; }
+  let name=document.getElementById("f_name").value.trim();
+  let amountStr=document.getElementById("f_amount").value;
+  let due=document.getElementById("f_due").value;
+  let rec=document.getElementById("f_rec").value;
+  let cat=document.getElementById("f_cat").value;
+  let newCat=document.getElementById("f_newcat").value.trim();
+  let notes=document.getElementById("f_notes").value.trim();
+  let curSel=document.getElementById("f_currency").value;
+  let curCustom=document.getElementById("f_currency_custom").value.trim();
+  let currency = curSel==="custom"? (curCustom||"$") : curSel;
+  let finalCat=newCat||cat;
+  let amt=Number(amountStr);
+  let changed = name!==originalData.name || amt!==originalData.amount || due!==originalData.dueDate || rec!==originalData.recurrence || finalCat!==originalData.category || notes!==originalData.notes || currency!==originalData.currency;
+  saveBtn.disabled=!changed;
+  saveBtn.style.opacity=changed?"1":"0.5";
+  saveBtn.style.cursor=changed?"pointer":"not-allowed";
+  return changed;
+}
 document.getElementById("saveEdit").onclick=()=>{
  let name=document.getElementById("f_name").value.trim(); let amountStr=document.getElementById("f_amount").value; let due=document.getElementById("f_due").value; let rec=document.getElementById("f_rec").value; let cat=document.getElementById("f_cat").value; let newCat=document.getElementById("f_newcat").value.trim(); let notes=document.getElementById("f_notes").value.trim();
  let curSel=document.getElementById("f_currency").value; let curCustom=document.getElementById("f_currency_custom").value.trim();
  let currency = curSel==="custom"? (curCustom||"$") : curSel;
+ if(!checkIfChanged() && editId){ return; }
  if(!name || !amountStr){alert("Please fill name and amount"); return;} let amt=Number(amountStr); if(isNaN(amt)||amt<=0){alert("Amount must be positive"); return;}
  let finalCat=newCat||cat|| (editType==='income'?"Other Income":"Other");
  if(newCat){
@@ -828,7 +885,12 @@ document.getElementById("deleteScopeCancel").onclick=()=>{document.getElementByI
 document.getElementById("deleteScopeBackdrop").onclick=(e)=>{if(e.target.id==="deleteScopeBackdrop") document.getElementById("deleteScopeBackdrop").classList.remove("open");};
 document.getElementById("deleteScopeApply").onclick=()=>{ try{ commitDelete(deleteScope); }catch(e){ console.error(e); } document.getElementById("deleteScopeBackdrop").classList.remove("open"); try{ save(); }catch(e){} renderAll(); };
 let fCurrEl=document.getElementById("f_currency");
-if(fCurrEl){ fCurrEl.addEventListener('change', function(){ let custom=document.getElementById("f_currency_custom"); if(this.value==="custom"){ custom.style.display="block"; custom.focus(); } else { custom.style.display="none"; } }); }
+if(fCurrEl){ fCurrEl.addEventListener('change', function(){ let custom=document.getElementById("f_currency_custom"); if(this.value==="custom"){ custom.style.display="block"; custom.focus(); } else { custom.style.display="none"; } checkIfChanged(); }); }
+["f_name","f_amount","f_due","f_rec","f_cat","f_newcat","f_notes","f_currency_custom"].forEach(id=>{
+  let el=document.getElementById(id);
+  if(el){ el.addEventListener('input', checkIfChanged); el.addEventListener('change', checkIfChanged); }
+});
+
 
 document.getElementById("exportBtn").onclick=()=>{
   try{
