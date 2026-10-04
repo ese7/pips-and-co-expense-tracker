@@ -154,12 +154,6 @@ html.light .type-toggle button.expense.active{background:#dc2626}
 /* Ensure gap between total tab and 2 tabs matches gap to period section (18px) */
 #totalsGrid{ gap:18px; margin-bottom:18px !important }
 
-
-.modal select.input{padding-right:38px !important;background-position:right 12px center !important}
-.input[type="date"]{padding-right:38px !important}
-.input[type="date"]::-webkit-calendar-picker-indicator{position:absolute;right:12px;width:16px;height:16px;opacity:0.6;cursor:pointer;filter:invert(0.6)}
-html.light .input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(0.4);opacity:0.7}
-
 </style>
 <script src="./firebase-config.js"></script>
 </head>
@@ -215,11 +209,9 @@ html.light .input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(
 
 <footer style="padding:18px 0;margin-top:18px;border-top:1px solid var(--border-dark)"><div class="container" style="text-align:center;font-size:11px;color:var(--muted)"><div style="font-style:italic;margin-bottom:6px">A simple, powerful recurring budget tracker</div>Built with <span style="color:#ef4444">♥</span> by <a href="https://sitestars.net/" target="_blank">Sitestars</a></div></footer>
 
-<div id="editBackdrop" class="modal-backdrop"><div class="modal"><h3 id="modalTitle" style="margin:0 0 3px 0;font-size:15px;font-weight:600">New Expense</h3><div style="display:grid;gap:10px"><div><label>Name</label><input id="f_name" class="input" placeholder="e.g. Rent, Groceries"></div><div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;min-width:0"><div style="min-width:0"><label>Amount</label><input id="f_amount" class="input" type="number" step="0.01" placeholder="0.00"></div><div style="min-width:0"><label>Due date (optional)</label><input id="f_due" class="input" type="date"></div></div><div><label>Recurrence</label><select id="f_rec" class="input"><option value="none">None</option><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="biweekly">Bi-Weekly</option><option value="yearly">Yearly</option><option value="quarterly">Quarterly</option><option value="semiannually">Semi-annually</option></select></div><div><label>Category</label><select id="f_cat" class="input"></select><div style="display:flex;gap:6px;margin-top:6px"><input id="f_newcat" class="input" placeholder="New category" style="flex:1"><button id="addCatBtn" class="btn btn-ghost">Add</button></div></div><div><label>Notes (optional)</label><input id="f_notes" class="input" placeholder="Optional notes"></div></div><div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="cancelEdit" class="btn btn-ghost">Cancel</button><button id="saveEdit" class="btn btn-primary">Save</button></div></div></div>
+<div id="editBackdrop" class="modal-backdrop"><div class="modal"><h3 id="modalTitle" style="margin:0 0 3px 0;font-size:15px;font-weight:600">New Expense</h3><div style="display:grid;gap:18px"><div><label>Name</label><input id="f_name" class="input" placeholder="e.g. Rent, Groceries"></div><div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,0.9fr);gap:12px;min-width:0"><div style="min-width:0"><label>Amount</label><input id="f_amount" class="input" type="number" step="0.01" placeholder="0.00"></div><div style="min-width:0"><label>Currency</label><select id="f_currency" class="input"><option value="$">$ USD</option><option value="€">€ EUR</option><option value="£">£ GBP</option><option value="¥">¥ JPY</option><option value="₹">₹ INR</option><option value="A$">A$ AUD</option><option value="C$">C$ CAD</option><option value="₦">₦ NGN</option><option value="R">R ZAR</option><option value="custom">Custom</option></select><input id="f_currency_custom" class="input" placeholder="Custom symbol" style="display:none;margin-top:8px"></div></div><div style="min-width:0"><label id="f_due_label">Due date (optional)</label><input id="f_due" class="input" type="date"></div><div><label>Recurrence</label><select id="f_rec" class="input"><option value="none">None</option><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="biweekly">Bi-Weekly</option><option value="yearly">Yearly</option><option value="quarterly">Quarterly</option><option value="semiannually">Semi-annually</option></select></div><div><label>Category</label><select id="f_cat" class="input"></select><div style="display:flex;gap:8px;margin-top:10px"><input id="f_newcat" class="input" placeholder="New category" style="flex:1"><button id="addCatBtn" class="btn btn-ghost">Add</button></div></div><div><label>Notes (optional)</label><input id="f_notes" class="input" placeholder="Optional notes"></div></div><div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="cancelEdit" class="btn btn-ghost">Cancel</button><button id="saveEdit" class="btn btn-primary">Save</button></div></div></div>
 
-<div id="scopeBackdrop" class="modal-backdrop" style="z-index:60"><div class="modal" style="max-width:440px"><h3 style="margin:0 0 4px 0;font-size:15px;font-weight:600">Edit recurring</h3><div id="scopeDesc" style="font-size:11px;color:var(--muted)"></div><div style="margin-top:10px"><div class="scope-opt selected" data-scope="single"><div class="dot"></div><div><div class="scope-title">This single entry</div><div class="scope-desc">Only this entry will be changed.</div></div></div><div class="scope-opt" data-scope="forward"><div class="dot"></div><div><div class="scope-title">Current entry going forward</div><div class="scope-desc">This and all future entries will use the new values.</div></div></div><div class="scope-opt" data-scope="all"><div class="dot"></div><div><div class="scope-title">All entries</div><div class="scope-desc">Every occurrence in the series will be updated.</div></div></div></div><div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="scopeCancel" class="btn btn-ghost">Cancel</button><button id="scopeApply" class="btn btn-primary">Apply</button></div></div></div>
-
-<div id="deleteScopeBackdrop" class="modal-backdrop" style="z-index:60"><div class="modal" style="max-width:440px"><h3 style="margin:0 0 4px 0;font-size:15px;font-weight:600">Delete recurring</h3><div id="deleteScopeDesc" style="font-size:11px;color:var(--muted)"></div><div style="margin-top:10px"><div class="scope-opt selected" data-scope="single"><div class="dot"></div><div><div class="scope-title">This single entry</div><div class="scope-desc">Only this entry will be deleted.</div></div></div><div class="scope-opt" data-scope="forward"><div class="dot"></div><div><div class="scope-title">Current and going forward</div><div class="scope-desc">This and all future entries will be deleted.</div></div></div><div class="scope-opt" data-scope="all"><div class="dot"></div><div><div class="scope-title">All entries</div><div class="scope-desc">Every occurrence in the series will be deleted.</div></div></div></div><div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="deleteScopeCancel" class="btn btn-ghost">Cancel</button><button id="deleteScopeApply" class="btn btn-primary" style="background:#ef4444;border-color:#ef4444">Delete</button></div></div></div>
+<div id="scopeBackdrop" class="modal-backdrop" style="z-index:60"><div class="modal" style="max-width:440px"><h3 style="margin:0 0 4px 0;font-size:15px;font-weight:600">Edit recurring</h3><div id="scopeDesc" style="font-size:11px;color:var(--muted)"></div><div style="margin-top:10px"><div class="scope-opt selected" data-scope="single"><div class="dot"></div><div><div class="scope-title">This single entry</div><div class="scope-desc">Only this month will be changed.</div></div></div><div class="scope-opt" data-scope="forward"><div class="dot"></div><div><div class="scope-title">Current entry going forward</div><div class="scope-desc">This and all future months will use the new values.</div></div></div><div class="scope-opt" data-scope="all"><div class="dot"></div><div><div class="scope-title">All entries</div><div class="scope-desc">Every occurrence in the series will be updated.</div></div></div></div><div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="scopeCancel" class="btn btn-ghost">Cancel</button><button id="scopeApply" class="btn btn-primary">Apply</button></div></div></div>
 
 <script>
 const LOGO_DARK = "./logo-white.png";
@@ -260,21 +252,6 @@ let incomeTemplates=data?.incomeTemplates||[];
 let incomePayments=data?.incomePayments||[];
 let incomeCats=data?.incomeCategories?.length? data.incomeCategories : DEFAULT_INCOME_CATS.slice();
 
-// CLEANUP ORPHANED PAYMENTS - fixes persisted amounts after delete
-let orphanBefore = expensePayments.length + incomePayments.length;
-expensePayments = expensePayments.filter(p=>{
-  if(p.deleted) return false;
-  return expenseTemplates.some(t=>t.id===p.templateId);
-});
-incomePayments = incomePayments.filter(p=>{
-  if(p.deleted) return false;
-  return incomeTemplates.some(t=>t.id===p.templateId);
-});
-if(orphanBefore !== expensePayments.length + incomePayments.length){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({expenseTemplates, expensePayments, expenseCategories:expenseCats, incomeTemplates, incomePayments, incomeCategories:incomeCats, isDark, version:12, savedAt:new Date().toISOString()})); }catch{}
-}
-
-
 let isDark=(()=>{if(data && typeof data.isDark==="boolean") return data.isDark; try{let v=localStorage.getItem("pips_expense_dark_mode"); if(v!==null) return JSON.parse(v)}catch{} try{return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches}catch{return true}})();
 let activeMonth=curM();
 let activeType='expense'; // expense | income
@@ -310,38 +287,18 @@ function isPaid(tid,m){return activeType==='expense'? isPaidExpense(tid,m): isPa
 
 function getDue(tpl,mStr){
   if(!tpl.dueDate) return null;
-  try{
-    let due=parseD(tpl.dueDate);
-    let {y,m}=parseM(mStr);
-    let dueY=due.getFullYear(), dueM=due.getMonth();
-    let diff=(y-dueY)*12 + (m-dueM);
-    let rec=tpl.recurrence||"none";
-    if(diff<0) return null;
-    let mkDate = (d)=> new Date(y,m,Math.min(d||due.getDate(),dim(y,m)));
-    if(rec==="none"){ if(diff===0) return [mkDate()]; return null; }
-    if(rec==="yearly"){ if(diff%12!==0) return null; return [mkDate()]; }
-    if(rec==="quarterly"){ if(diff%3!==0) return null; return [mkDate()]; }
-    if(rec==="semiannually"){ if(diff%6!==0) return null; return [mkDate()]; }
-    if(rec==="weekly"||rec==="biweekly"){
-      let interval = rec==="weekly"? 7 : 14;
-      let results=[];
-      let monthStart = new Date(y,m,1);
-      let monthEnd = new Date(y,m,dim(y,m),23,59,59);
-      let start = new Date(due);
-      if(start < monthStart){
-        let diffDays = Math.ceil((monthStart - start)/86400000);
-        let steps = Math.floor(diffDays / interval);
-        start = new Date(start.getTime() + steps*interval*86400000);
-        while(start < monthStart){ start = new Date(start.getTime() + interval*86400000); }
-      }
-      let cur = new Date(start);
-      let guard=0;
-      while(cur <= monthEnd && guard<20){ results.push(new Date(cur)); cur = new Date(cur.getTime() + interval*86400000); guard++; }
-      if(results.length===0) results.push(mkDate());
-      return results;
-    }
-    return [mkDate()];
-  }catch(e){ console.error('getDue', e); return null; }
+  let due=parseD(tpl.dueDate);
+  let {y,m}=parseM(mStr);
+  let dueY=due.getFullYear(), dueM=due.getMonth();
+  let diff=(y-dueY)*12 + (m-dueM);
+  let rec=tpl.recurrence||"none";
+  if(diff<0) return null;
+  if(rec==="none"){ if(diff===0) return new Date(y,m,Math.min(due.getDate(),dim(y,m))); return null; }
+  if(rec==="yearly"){ if(diff%12!==0) return null; return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
+  if(rec==="quarterly"){ if(diff%3!==0) return null; return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
+  if(rec==="semiannually"){ if(diff%6!==0) return null; return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
+  if(rec==="weekly"||rec==="biweekly"){ return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
+  return new Date(y,m,Math.min(due.getDate(),dim(y,m)));
 }
 
 function earliest(){
@@ -388,7 +345,12 @@ function computeMonthData(templates, payments, filterCat){
       });
     }catch(e){ console.error('compute', e); }
   });
-  // Archive not counted to fix ghost amounts persisting after delete
+  // CLEANUP ORPHANED - archive not counted in totals (fixes ghost amounts)
+  payments.filter(p=>p.month===activeMonth && !p.deleted).forEach(p=>{
+    if(!templates.find(t=>t.id===p.templateId)){
+      // Orphaned - don't count
+    }
+  });
   let paidNodue = nodue.filter(x=>x.paid);
   let total = dated.reduce((a,b)=>a+b.amt,0)+paidNodue.reduce((a,b)=>a+b.amt,0);
   let paid = dated.filter(x=>x.paid).reduce((a,b)=>a+b.amt,0)+paidNodue.reduce((a,b)=>a+b.amt,0);
@@ -476,13 +438,12 @@ function iconPencil(){return `<svg width="13" height="13" viewBox="0 0 24 24" fi
 function iconTrash(){return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`}
 function iconCal(){return `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`}
 
-function rowHtml({tpl,due,paid,amt,dueSoon,overdue,isOutstanding,currency,occurrenceIndex}){
+function rowHtml({tpl,due,paid,amt,dueSoon,overdue,isOutstanding}){
  let cls="item"+(paid?" paid":"")+(overdue&&!paid?" overdue":"")+(dueSoon&&!paid?" duesoon":"");
  let dueLabel=due? `${due.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"}).replace(',','')} • ${tpl.recurrence}` : `No due date${tpl.recurrence!=="none"?` • ${tpl.recurrence}`:""}`;
  let badgeSoonText = (typeof activeType!=='undefined' && activeType==='income') ? 'Arriving soon' : 'Due soon';
  let badges=`<span class="badge">${tpl.category}</span>`+(dueSoon?`<span class="badge badge-amber">${badgeSoonText}</span>`:"")+(overdue&&!paid?`<span class="badge badge-red">Overdue</span>`:"");
- let curSym = currency || tpl.currency || '$';
- return `<div class="${cls}"><div class="circle ${paid?"checked":""}" data-toggle="${tpl.id}" data-occ="${occurrenceIndex!=null?occurrenceIndex:''}">${paid?"✓":""}</div><div style="flex:1;min-width:0"><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap"><span style="font-weight:600;font-size:12px;${paid?"text-decoration:line-through;opacity:.7":""}">${tpl.name}</span>${badges}</div><div style="font-size:10px;color:var(--muted);display:flex;gap:4px;align-items:center;margin-top:2px">${iconCal()} ${dueLabel}</div></div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0"><span style="font-weight:600;font-size:12px;${paid?"text-decoration:line-through;opacity:.7":(isOutstanding?"color:#f59e0b":"")}">${curSym}${amt.toFixed(2)}</span><button class="icon-btn" data-edit="${tpl.id}" data-occ="${occurrenceIndex!=null?occurrenceIndex:''}">${iconPencil()}</button><button class="icon-btn" data-del="${tpl.id}" data-occ="${occurrenceIndex!=null?occurrenceIndex:''}">${iconTrash()}</button></div></div>`;
+ return `<div class="${cls}"><div class="circle ${paid?"checked":""}" data-toggle="${tpl.id}">${paid?"✓":""}</div><div style="flex:1;min-width:0"><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap"><span style="font-weight:600;font-size:12px;${paid?"text-decoration:line-through;opacity:.7":""}">${tpl.name}</span>${badges}</div><div style="font-size:10px;color:var(--muted);display:flex;gap:4px;align-items:center;margin-top:2px">${iconCal()} ${dueLabel}</div></div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0"><span style="font-weight:600;font-size:12px;${paid?"text-decoration:line-through;opacity:.7":(isOutstanding?"color:#f59e0b":"")}">$${amt.toFixed(2)}</span><button class="icon-btn" data-edit="${tpl.id}">${iconPencil()}</button><button class="icon-btn" data-del="${tpl.id}">${iconTrash()}</button></div></div>`;
 }
 
 function renderMain(){
@@ -541,12 +502,15 @@ function renderAll(){
   el.newBtn.innerHTML=`<span style="font-size:14px;line-height:1">+</span> <span class="hide-mobile">New ${activeType==='expense'?'Expense':'Income'}</span><span class="show-mobile">New</span>`;
 }
 
-function togglePaid(tid){
+function togglePaid(tid, occIdx){
   let templates = activeType==='expense'? expenseTemplates : incomeTemplates;
-  let payments = activeType==='expense'? expensePayments : incomePayments;
   let tpl=templates.find(t=>t.id===tid);
-  let findPayFn = activeType==='expense'? findPayExpense : findPayIncome;
-  let ex=findPayFn(tid,activeMonth);
+  let occ = (occIdx!==undefined && occIdx!==null && !isNaN(occIdx)) ? occIdx : null;
+  let payments = activeType==='expense'? expensePayments : incomePayments;
+  let ex=null;
+  if(occ!==null) ex=payments.find(p=>p.templateId===tid && p.month===activeMonth && p.occurrenceIndex===occ && !p.deleted);
+  if(!ex) ex=payments.find(p=>p.templateId===tid && p.month===activeMonth && (p.occurrenceIndex===undefined || p.occurrenceIndex===null) && !p.deleted);
+  if(!ex) ex=payments.find(p=>p.templateId===tid && p.month===activeMonth && !p.deleted);
   let todayStr=new Date().toISOString().slice(0,10);
   if(ex){
     if(ex.paid){
@@ -560,16 +524,12 @@ function togglePaid(tid){
     } else {
       if(activeType==='expense') expensePayments=expensePayments.map(p=>p.id===ex.id? {...p,paid:true,paidAt:new Date().toISOString()}:p);
       else incomePayments=incomePayments.map(p=>p.id===ex.id? {...p,paid:true,paidAt:new Date().toISOString()}:p);
-      if(tpl && !tpl.dueDate){
-        tpl.dueDate=todayStr;
-      }
+      if(tpl && !tpl.dueDate) tpl.dueDate=todayStr;
     }
   } else {
-    let newPay={id:uid(),templateId:tid,month:activeMonth,amount:null,paidAt:new Date().toISOString(),paid:true,snapshotName:tpl?.name,snapshotCategory:tpl?.category};
+    let newPay={id:uid(),templateId:tid,month:activeMonth,amount:null,paidAt:new Date().toISOString(),paid:true,snapshotName:tpl?.name,snapshotCategory:tpl?.category,occurrenceIndex:occ};
     if(activeType==='expense') expensePayments.push(newPay); else incomePayments.push(newPay);
-    if(tpl && !tpl.dueDate){
-      tpl.dueDate=todayStr;
-    }
+    if(tpl && !tpl.dueDate) tpl.dueDate=todayStr;
   }
   save(); renderAll();
 }
@@ -581,55 +541,120 @@ function deleteTpl(id){
   save(); renderAll();
 }
 
+let editOccurrenceIndex=null;
+let originalData=null;
 function openNew(){
   editId=null;
+  editOccurrenceIndex=null;
+  originalData=null;
   editType=activeType;
   let isIncome = activeType==='income';
   document.getElementById("modalTitle").textContent=isIncome? "New Income" : "New Expense";
+  document.getElementById("f_due_label").textContent=isIncome? "Expected date (optional)" : "Due date (optional)";
   document.getElementById("f_name").value="";
   document.getElementById("f_amount").value="";
   document.getElementById("f_due").value="";
   document.getElementById("f_rec").value="monthly";
+  document.getElementById("f_currency").value="$";
+  let cc=document.getElementById("f_currency_custom"); if(cc){ cc.style.display="none"; cc.value=""; }
   let cats = isIncome? incomeCats : expenseCats;
   document.getElementById("f_cat").value=cats[0]|| (isIncome? "Other Income":"Other");
   document.getElementById("f_newcat").value="";
   document.getElementById("f_notes").value="";
   renderCats();
   document.getElementById("editBackdrop").classList.add("open");
+  let saveBtn=document.getElementById("saveEdit"); saveBtn.disabled=false; saveBtn.style.opacity="1"; saveBtn.style.cursor="pointer";
 }
 
-function openEdit(id){
+function openEdit(id, occIdx){
   let templates = activeType==='expense'? expenseTemplates : incomeTemplates;
   let payments = activeType==='expense'? expensePayments : incomePayments;
   let t=templates.find(x=>x.id===id); if(!t) return;
   editId=id;
+  editOccurrenceIndex = (occIdx!==undefined && occIdx!==null && !isNaN(occIdx)) ? occIdx : null;
   editType=activeType;
-  let pay=payments.find(p=>p.templateId===id && p.month===activeMonth);
+  let pay=null;
+  if(editOccurrenceIndex!==null){
+    pay=payments.find(p=>p.templateId===id && p.month===activeMonth && p.occurrenceIndex===editOccurrenceIndex && !p.deleted);
+  }
+  if(!pay){
+    pay=payments.find(p=>p.templateId===id && p.month===activeMonth && (p.occurrenceIndex===undefined || p.occurrenceIndex===null) && !p.deleted);
+    if(!pay) pay=payments.find(p=>p.templateId===id && p.month===activeMonth && !p.deleted);
+  }
   let nameVal = pay?.snapshotName || t.name;
   let amountVal = (pay && pay.amount!=null) ? pay.amount : t.amount;
   let dueVal = t.dueDate||"";
   let recVal = t.recurrence;
   let catVal = pay?.snapshotCategory || t.category;
   let notesVal = pay?.snapshotNotes || pay?.notes || t.notes || "";
+  let curVal = t.currency || "$";
   document.getElementById("modalTitle").textContent= activeType==='income'? "Edit Income" : "Edit Expense";
+  document.getElementById("f_due_label").textContent= activeType==='income'? "Expected date (optional)" : "Due date (optional)";
   document.getElementById("f_name").value=nameVal;
   document.getElementById("f_amount").value=amountVal;
   document.getElementById("f_due").value=dueVal;
   document.getElementById("f_rec").value=recVal;
   document.getElementById("f_cat").value=catVal;
   document.getElementById("f_notes").value=notesVal;
+  let sel=document.getElementById("f_currency");
+  let custom=document.getElementById("f_currency_custom");
+  if(sel){
+    if(["$","€","£","¥","₹","A$","C$","₦","R"].includes(curVal)){ sel.value=curVal; if(custom) custom.style.display="none"; }
+    else { sel.value="custom"; if(custom){ custom.style.display="block"; custom.value=curVal; } }
+  }
   renderCats();
   document.getElementById("f_cat").value=catVal;
   document.getElementById("editBackdrop").classList.add("open");
+  setTimeout(()=>{ captureOriginalData(); checkIfChanged(); }, 50);
 }
 
+function captureOriginalData(){
+  if(!editId){ originalData=null; return; }
+  let templates = editType==='expense'? expenseTemplates : incomeTemplates;
+  let t=templates.find(x=>x.id===editId);
+  if(!t){ originalData=null; return; }
+  let payments = editType==='expense'? expensePayments : incomePayments;
+  let pay=null;
+  if(editOccurrenceIndex!==null) pay=payments.find(p=>p.templateId===editId && p.month===activeMonth && p.occurrenceIndex===editOccurrenceIndex && !p.deleted);
+  if(!pay) pay=payments.find(p=>p.templateId===editId && p.month===activeMonth && !p.deleted);
+  let nameVal = pay?.snapshotName || t.name;
+  let amountVal = (pay && pay.amount!=null) ? pay.amount : t.amount;
+  let dueVal = t.dueDate||"";
+  let recVal = t.recurrence;
+  let catVal = pay?.snapshotCategory || t.category;
+  let notesVal = pay?.snapshotNotes || pay?.notes || t.notes || "";
+  let curVal = t.currency || "$";
+  originalData={name:nameVal, amount:amountVal, dueDate:dueVal, recurrence:recVal, category:catVal, notes:notesVal, currency:curVal};
+}
+function checkIfChanged(){
+  let saveBtn=document.getElementById("saveEdit");
+  if(!editId){ saveBtn.disabled=false; saveBtn.style.opacity="1"; saveBtn.style.cursor="pointer"; return true; }
+  if(!originalData){ saveBtn.disabled=false; saveBtn.style.opacity="1"; saveBtn.style.cursor="pointer"; return true; }
+  let name=document.getElementById("f_name").value.trim();
+  let amountStr=document.getElementById("f_amount").value;
+  let due=document.getElementById("f_due").value;
+  let rec=document.getElementById("f_rec").value;
+  let cat=document.getElementById("f_cat").value;
+  let newCat=document.getElementById("f_newcat").value.trim();
+  let notes=document.getElementById("f_notes").value.trim();
+  let curSel=document.getElementById("f_currency").value;
+  let curCustom=document.getElementById("f_currency_custom").value.trim();
+  let currency = curSel==="custom"? (curCustom||"$") : curSel;
+  let finalCat=newCat||cat;
+  let amt=Number(amountStr);
+  let changed = name!==originalData.name || amt!==originalData.amount || due!==originalData.dueDate || rec!==originalData.recurrence || finalCat!==originalData.category || notes!==originalData.notes || currency!==originalData.currency;
+  saveBtn.disabled=!changed;
+  saveBtn.style.opacity=changed?"1":"0.5";
+  saveBtn.style.cursor=changed?"pointer":"not-allowed";
+  return changed;
+}
 function commitSave(data,scope){
- let {name,amount,dueDate,recurrence,category,notes}=data;
+ let {name,amount,dueDate,recurrence,category,notes,currency}=data;
  let templates = editType==='expense'? expenseTemplates : incomeTemplates;
  let payments = editType==='expense'? expensePayments : incomePayments;
  
  if(!editId){
-   const t={id:uid(),name,amount,dueDate:dueDate||null,recurrence,category,createdAt:new Date().toISOString()};
+   const t={id:uid(),name,amount,dueDate:dueDate||null,recurrence,category,currency:currency||"$",createdAt:new Date().toISOString()};
    if(notes) t.notes=notes;
    if(editType==='expense') expenseTemplates.push(t); else incomeTemplates.push(t);
    return;
@@ -637,33 +662,22 @@ function commitSave(data,scope){
  let existing=templates.find(t=>t.id===editId); if(!existing) return;
  if(scope==="all" || !existing || existing.recurrence==="none"){
   if(editType==='expense'){
-    expenseTemplates=expenseTemplates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
+    expenseTemplates=expenseTemplates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category,currency:currency||t.currency||"$"}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
   } else {
-    incomeTemplates=incomeTemplates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
+    incomeTemplates=incomeTemplates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category,currency:currency||t.currency||"$"}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
   }
   if(scope==="all"){
     if(editType==='expense') expensePayments=expensePayments.map(p=> p.templateId===editId? {...p,snapshotName:name,snapshotCategory:category,snapshotNotes:notes}:p);
     else incomePayments=incomePayments.map(p=> p.templateId===editId? {...p,snapshotName:name,snapshotCategory:category,snapshotNotes:notes}:p);
   }
  } else if(scope==="single"){
-  let occIdx = (typeof editOccurrenceIndex!=='undefined' && editOccurrenceIndex!==null && !isNaN(editOccurrenceIndex)) ? editOccurrenceIndex : null;
-  let payList = editType==='expense'? expensePayments : incomePayments;
-  let ex=null;
-  if(occIdx!==null){
-    ex=payList.find(p=>p.templateId===editId && p.month===activeMonth && p.occurrenceIndex===occIdx && !p.deleted);
-  }
-  if(!ex){
-    ex=payList.find(p=>p.templateId===editId && p.month===activeMonth && (p.occurrenceIndex===undefined || p.occurrenceIndex===null) && !p.deleted);
-  }
-  if(!ex){
-    let findFn = editType==='expense'? findPayExpense : findPayIncome;
-    ex=findFn(editId,activeMonth);
-  }
+  let findFn = editType==='expense'? findPayExpense : findPayIncome;
+  let ex=findFn(editId,activeMonth);
   if(ex){
-    if(editType==='expense') expensePayments=expensePayments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes,occurrenceIndex: occIdx!==null? occIdx : p.occurrenceIndex}:p);
-    else incomePayments=incomePayments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes,occurrenceIndex: occIdx!==null? occIdx : p.occurrenceIndex}:p);
+    if(editType==='expense') expensePayments=expensePayments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes}:p);
+    else incomePayments=incomePayments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes}:p);
   } else {
-    let newPay={id:uid(),templateId:editId,month:activeMonth,amount,paidAt:new Date().toISOString(),paid:false,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes,occurrenceIndex: occIdx};
+    let newPay={id:uid(),templateId:editId,month:activeMonth,amount,paidAt:new Date().toISOString(),paid:false,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes};
     if(editType==='expense') expensePayments.push(newPay); else incomePayments.push(newPay);
   }
  } else if(scope==="forward"){
@@ -706,8 +720,17 @@ document.getElementById("addCatBtn").onclick=()=>{
   document.getElementById("f_newcat").value="";
   save();
 };
+let fCurrEl=document.getElementById("f_currency");
+if(fCurrEl){ fCurrEl.addEventListener('change', function(){ let custom=document.getElementById("f_currency_custom"); if(this.value==="custom"){ custom.style.display="block"; custom.focus(); } else { custom.style.display="none"; } if(typeof checkIfChanged==='function') checkIfChanged(); }); }
+["f_name","f_amount","f_due","f_rec","f_cat","f_newcat","f_notes","f_currency_custom"].forEach(id=>{
+  let el=document.getElementById(id);
+  if(el){ el.addEventListener('input', ()=>{ if(typeof checkIfChanged==='function') checkIfChanged(); }); el.addEventListener('change', ()=>{ if(typeof checkIfChanged==='function') checkIfChanged(); }); }
+});
 document.getElementById("saveEdit").onclick=()=>{
  let name=document.getElementById("f_name").value.trim(); let amountStr=document.getElementById("f_amount").value; let due=document.getElementById("f_due").value; let rec=document.getElementById("f_rec").value; let cat=document.getElementById("f_cat").value; let newCat=document.getElementById("f_newcat").value.trim(); let notes=document.getElementById("f_notes").value.trim();
+ let curSel=document.getElementById("f_currency").value; let curCustom=document.getElementById("f_currency_custom").value.trim();
+ let currency = curSel==="custom"? (curCustom||"$") : curSel;
+ if(typeof checkIfChanged==='function' && !checkIfChanged() && editId){ return; }
  if(!name || !amountStr){alert("Please fill name and amount"); return;} let amt=Number(amountStr); if(isNaN(amt)||amt<=0){alert("Amount must be positive"); return;}
  let finalCat=newCat||cat|| (editType==='income'?"Other Income":"Other");
  if(newCat){
@@ -718,7 +741,7 @@ document.getElementById("saveEdit").onclick=()=>{
    }
    finalCat=newCat;
  }
- let data={name,amount:amt,dueDate:due||null,recurrence:rec,category:finalCat,notes};
+ let data={name,amount:amt,dueDate:due||null,recurrence:rec,category:finalCat,notes,currency};
  if(editId){
    let templates = editType==='expense'? expenseTemplates : incomeTemplates;
    let ex=templates.find(t=>t.id===editId);
