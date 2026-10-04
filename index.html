@@ -156,15 +156,9 @@ html.light .type-toggle button.expense.active{background:#dc2626}
 
 
 .modal select.input{padding-right:38px !important;background-position:right 12px center !important}
-.input[type="date"]{padding-right:38px !important;position:relative}
-.input[type="date"]::-webkit-calendar-picker-indicator{
-  position:absolute;right:12px;width:16px;height:16px;
-  opacity:0.6;cursor:pointer;
-  filter:invert(0.6) sepia(0) saturate(0) hue-rotate(0deg);
-}
-html.light .input[type="date"]::-webkit-calendar-picker-indicator{
-  filter:invert(0.4) sepia(0) saturate(0) hue-rotate(0deg);opacity:0.7;
-}
+.input[type="date"]{padding-right:38px !important}
+.input[type="date"]::-webkit-calendar-picker-indicator{position:absolute;right:12px;width:16px;height:16px;opacity:0.6;cursor:pointer;filter:invert(0.6)}
+html.light .input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(0.4);opacity:0.7}
 
 </style>
 <script src="./firebase-config.js"></script>
@@ -266,22 +260,19 @@ let incomeTemplates=data?.incomeTemplates||[];
 let incomePayments=data?.incomePayments||[];
 let incomeCats=data?.incomeCategories?.length? data.incomeCategories : DEFAULT_INCOME_CATS.slice();
 
-// Cleanup orphaned/deleted ghost payments that cause persisted amounts
-try{
-  let before = expensePayments.length + incomePayments.length;
-  expensePayments = expensePayments.filter(p=>{
-    if(p.deleted) return false;
-    return expenseTemplates.some(t=>t.id===p.templateId);
-  });
-  incomePayments = incomePayments.filter(p=>{
-    if(p.deleted) return false;
-    return incomeTemplates.some(t=>t.id===p.templateId);
-  });
-  // Also keep payments that are for future months but template exists - already filtered
-  if(before !== expensePayments.length + incomePayments.length){
-    console.log('Cleaned orphaned payments', before - (expensePayments.length+incomePayments.length));
-  }
-}catch(e){ console.error('cleanup error', e); }
+// CLEANUP ORPHANED PAYMENTS - fixes persisted amounts after delete
+let orphanBefore = expensePayments.length + incomePayments.length;
+expensePayments = expensePayments.filter(p=>{
+  if(p.deleted) return false;
+  return expenseTemplates.some(t=>t.id===p.templateId);
+});
+incomePayments = incomePayments.filter(p=>{
+  if(p.deleted) return false;
+  return incomeTemplates.some(t=>t.id===p.templateId);
+});
+if(orphanBefore !== expensePayments.length + incomePayments.length){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({expenseTemplates, expensePayments, expenseCategories:expenseCats, incomeTemplates, incomePayments, incomeCategories:incomeCats, isDark, version:12, savedAt:new Date().toISOString()})); }catch{}
+}
 
 
 let isDark=(()=>{if(data && typeof data.isDark==="boolean") return data.isDark; try{let v=localStorage.getItem("pips_expense_dark_mode"); if(v!==null) return JSON.parse(v)}catch{} try{return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches}catch{return true}})();
@@ -319,18 +310,38 @@ function isPaid(tid,m){return activeType==='expense'? isPaidExpense(tid,m): isPa
 
 function getDue(tpl,mStr){
   if(!tpl.dueDate) return null;
-  let due=parseD(tpl.dueDate);
-  let {y,m}=parseM(mStr);
-  let dueY=due.getFullYear(), dueM=due.getMonth();
-  let diff=(y-dueY)*12 + (m-dueM);
-  let rec=tpl.recurrence||"none";
-  if(diff<0) return null;
-  if(rec==="none"){ if(diff===0) return new Date(y,m,Math.min(due.getDate(),dim(y,m))); return null; }
-  if(rec==="yearly"){ if(diff%12!==0) return null; return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
-  if(rec==="quarterly"){ if(diff%3!==0) return null; return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
-  if(rec==="semiannually"){ if(diff%6!==0) return null; return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
-  if(rec==="weekly"||rec==="biweekly"){ return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
-  return new Date(y,m,Math.min(due.getDate(),dim(y,m)));
+  try{
+    let due=parseD(tpl.dueDate);
+    let {y,m}=parseM(mStr);
+    let dueY=due.getFullYear(), dueM=due.getMonth();
+    let diff=(y-dueY)*12 + (m-dueM);
+    let rec=tpl.recurrence||"none";
+    if(diff<0) return null;
+    let mkDate = (d)=> new Date(y,m,Math.min(d||due.getDate(),dim(y,m)));
+    if(rec==="none"){ if(diff===0) return [mkDate()]; return null; }
+    if(rec==="yearly"){ if(diff%12!==0) return null; return [mkDate()]; }
+    if(rec==="quarterly"){ if(diff%3!==0) return null; return [mkDate()]; }
+    if(rec==="semiannually"){ if(diff%6!==0) return null; return [mkDate()]; }
+    if(rec==="weekly"||rec==="biweekly"){
+      let interval = rec==="weekly"? 7 : 14;
+      let results=[];
+      let monthStart = new Date(y,m,1);
+      let monthEnd = new Date(y,m,dim(y,m),23,59,59);
+      let start = new Date(due);
+      if(start < monthStart){
+        let diffDays = Math.ceil((monthStart - start)/86400000);
+        let steps = Math.floor(diffDays / interval);
+        start = new Date(start.getTime() + steps*interval*86400000);
+        while(start < monthStart){ start = new Date(start.getTime() + interval*86400000); }
+      }
+      let cur = new Date(start);
+      let guard=0;
+      while(cur <= monthEnd && guard<20){ results.push(new Date(cur)); cur = new Date(cur.getTime() + interval*86400000); guard++; }
+      if(results.length===0) results.push(mkDate());
+      return results;
+    }
+    return [mkDate()];
+  }catch(e){ console.error('getDue', e); return null; }
 }
 
 function earliest(){
@@ -352,7 +363,8 @@ function computeMonthData(templates, payments, filterCat){
       let createdM = t.createdAt ? t.createdAt.slice(0,7) : null;
       if(!t.dueDate && createdM && createdM > activeMonth) return;
       if(!t.dueDate){
-        let pay=payments.find(p=>p.templateId===t.id && p.month===activeMonth && !p.deleted);
+        let pay=payments.find(p=>p.templateId===t.id && p.month===activeMonth && !p.deleted && (p.occurrenceIndex===undefined || p.occurrenceIndex===null));
+        if(!pay) pay=payments.find(p=>p.templateId===t.id && p.month===activeMonth && !p.deleted);
         let displayTpl = pay?.snapshotName ? {...t, name:pay.snapshotName, category:pay.snapshotCategory||t.category, notes:pay.snapshotNotes||t.notes} : t;
         let paid = pay? pay.paid!==false : false;
         let amt = (pay && pay.amount!=null)? pay.amount : t.amount;
@@ -362,39 +374,24 @@ function computeMonthData(templates, payments, filterCat){
       let dues=getDue(t,activeMonth); if(!dues) return;
       if(!Array.isArray(dues)) dues=[dues];
       dues.forEach((due, idx)=>{
-        let delSpecific=payments.find(p=>p.templateId===t.id && p.month===activeMonth && p.deleted && p.occurrenceIndex===idx);
+        let delSpecific = payments.find(p=>p.templateId===t.id && p.month===activeMonth && p.deleted && p.occurrenceIndex===idx);
         if(delSpecific) return;
-        let delGeneric=payments.find(p=>p.templateId===t.id && p.month===activeMonth && p.deleted && (p.occurrenceIndex===undefined || p.occurrenceIndex===null));
-        if(delGeneric && dues.length===1) return;
-        // For multi-occ, generic delete should NOT hide all - only specific deletes hide
-        // So for multi, ignore generic delete
-        if(delGeneric && dues.length>1){
-          // Don't return - generic delete means delete all in month for old data, but for new logic we want specific
-          // To keep backward compat, if generic delete exists and no specific, treat as delete all
-          let hasSpecific=payments.some(p=>p.templateId===t.id && p.month===activeMonth && p.deleted && p.occurrenceIndex===idx);
-          if(!hasSpecific){
-            // Check if generic delete was intended as single month delete - for multi, we consider it as delete all if no specific exists
-            // But for new single delete with occ, we have specific, so this won't trigger
-          }
-        }
-        let occPay=payments.find(p=>p.templateId===t.id && p.month===activeMonth && p.occurrenceIndex===idx && !p.deleted);
-        let genPay=payments.find(p=>p.templateId===t.id && p.month===activeMonth && (p.occurrenceIndex===undefined || p.occurrenceIndex===null) && !p.deleted);
-        let eff=occPay || genPay;
-        let displayTpl = eff?.snapshotName ? {...t, name:eff.snapshotName, category:eff.snapshotCategory||t.category, notes:eff.snapshotNotes||t.notes} : t;
-        let paid = eff? eff.paid!==false : false;
-        let amt = (eff && eff.amount!=null)? eff.amount : t.amount;
+        let delGeneric = payments.find(p=>p.templateId===t.id && p.month===activeMonth && p.deleted && (p.occurrenceIndex===undefined || p.occurrenceIndex===null));
+        if(delGeneric) return;
+        let occPay = payments.find(p=>p.templateId===t.id && p.month===activeMonth && p.occurrenceIndex===idx && !p.deleted);
+        let genericPay = payments.find(p=>p.templateId===t.id && p.month===activeMonth && (p.occurrenceIndex===undefined || p.occurrenceIndex===null) && !p.deleted);
+        let effectivePay = occPay || genericPay;
+        let displayTpl = effectivePay?.snapshotName ? {...t, name:effectivePay.snapshotName, category:effectivePay.snapshotCategory||t.category, notes:effectivePay.snapshotNotes||t.notes} : t;
+        let paid = effectivePay? effectivePay.paid!==false : false;
+        let amt = (effectivePay && effectivePay.amount!=null)? effectivePay.amount : t.amount;
         dated.push({tpl:displayTpl, origTpl:t, due, paid, amt, currency:t.currency||'$', occurrenceIndex:idx});
       });
-    }catch(e){ console.error(e); }
+    }catch(e){ console.error('compute', e); }
   });
-  payments.filter(p=>p.month===activeMonth && !p.deleted).forEach(p=>{
-    if(!templates.find(t=>t.id===p.templateId)){
-      // Ghost amounts fix - don't count orphaned in totals
-    }
-  });
+  // Archive not counted to fix ghost amounts persisting after delete
   let paidNodue = nodue.filter(x=>x.paid);
-  let total = dated.reduce((a,b)=>a+b.amt,0)+archive.reduce((a,b)=>a+b.amt,0)+paidNodue.reduce((a,b)=>a+b.amt,0);
-  let paid = dated.filter(x=>x.paid).reduce((a,b)=>a+b.amt,0)+archive.filter(x=>x.payment && x.payment.paid!==false).reduce((a,b)=>a+b.amt,0)+paidNodue.reduce((a,b)=>a+b.amt,0);
+  let total = dated.reduce((a,b)=>a+b.amt,0)+paidNodue.reduce((a,b)=>a+b.amt,0);
+  let paid = dated.filter(x=>x.paid).reduce((a,b)=>a+b.amt,0)+paidNodue.reduce((a,b)=>a+b.amt,0);
   let unpaid=total-paid;
   return {dated,nodue,archive,total,paid,unpaid,paidNodue};
 }
@@ -500,25 +497,26 @@ function renderMain(){
  
  if(outstanding.length>0){
   html+=`<div style="margin-bottom:16px"><div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><h2 style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#fbbf24;margin:0;font-weight:700">Outstanding</h2><span class="badge">${outstanding.length}</span></div><div style="display:flex;flex-direction:column;gap:6px">`;
-  outstanding.forEach(x=>{ html+=rowHtml({tpl:x.tpl,due:null,paid:x.paid,amt:x.amt,isOutstanding:true,currency:x.currency}); });
+  outstanding.forEach(x=>{ html+=rowHtml({tpl:x.tpl,due:null,paid:x.paid,amt:x.amt,isOutstanding:true}); });
   html+=`</div></div>`;
  }
  
  // Show paid outstanding as part of this month
  if(paidOutstanding.length>0){
   html+=`<div style="margin-bottom:16px"><div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><h2 style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.7;margin:0;font-weight:600">Completed Outstanding - ${labelM(activeMonth)}</h2><span class="badge badge-green">✓ ${paidOutstanding.length}</span></div><div style="display:flex;flex-direction:column;gap:6px">`;
-  paidOutstanding.forEach(x=>{ html+=rowHtml({tpl:x.tpl,due:x.tpl.dueDate? parseD(x.tpl.dueDate): null,paid:true,amt:x.amt,currency:x.currency}); });
+  paidOutstanding.forEach(x=>{ html+=rowHtml({tpl:x.tpl,due:x.tpl.dueDate? parseD(x.tpl.dueDate): null,paid:true,amt:x.amt}); });
   html+=`</div></div>`;
  }
  
  html+=`<div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="display:flex;gap:6px;align-items:center"><h2 style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.7;margin:0;font-weight:700">This Month</h2><span class="badge">${dated.length}</span></div><span style="font-size:10px;color:var(--muted)">${labelM(activeMonth)}</span></div>`;
  if(dated.length===0 && outstanding.length===0 && paidOutstanding.length===0){
-   html+=`<div class="card" style="text-align:center;padding:24px;color:var(--muted);font-size:11px">No ${activeType} yet</div>`;
+   let emptyMsg = activeType==='expense' ? 'No expense yet' : 'No income yet';
+   html+=`<div class="card" style="text-align:center;padding:24px;color:var(--muted);font-size:11px">${emptyMsg}</div>`;
  } else if(dated.length===0){
    html+=`<div class="card" style="border-style:dashed;text-align:center;padding:18px;color:var(--muted);font-size:10px">No dated ${activeType} this month.</div>`;
  } else {
   html+=`<div style="display:flex;flex-direction:column;gap:6px">`;
-  dated.forEach(x=>{ let dueSoon = !x.paid && x.due>=today && x.due<=in5; let overdue = !x.paid && x.due<today; html+=rowHtml({tpl:x.tpl,due:x.due,paid:x.paid,amt:x.amt,dueSoon,overdue,currency:x.currency,occurrenceIndex:x.occurrenceIndex}); });
+  dated.forEach(x=>{ let dueSoon = !x.paid && x.due>=today && x.due<=in5; let overdue = !x.paid && x.due<today; html+=rowHtml({tpl:x.tpl,due:x.due,paid:x.paid,amt:x.amt,dueSoon,overdue}); });
   html+=`</div>`;
  }
  html+=`</div>`;
@@ -543,15 +541,12 @@ function renderAll(){
   el.newBtn.innerHTML=`<span style="font-size:14px;line-height:1">+</span> <span class="hide-mobile">New ${activeType==='expense'?'Expense':'Income'}</span><span class="show-mobile">New</span>`;
 }
 
-function togglePaid(tid, occIdx){
+function togglePaid(tid){
   let templates = activeType==='expense'? expenseTemplates : incomeTemplates;
-  let tpl=templates.find(t=>t.id===tid);
-  let occ = (occIdx!==undefined && occIdx!==null && !isNaN(occIdx)) ? occIdx : null;
   let payments = activeType==='expense'? expensePayments : incomePayments;
-  let ex=null;
-  if(occ!==null) ex=payments.find(p=>p.templateId===tid && p.month===activeMonth && p.occurrenceIndex===occ && !p.deleted);
-  if(!ex) ex=payments.find(p=>p.templateId===tid && p.month===activeMonth && (p.occurrenceIndex===undefined || p.occurrenceIndex===null) && !p.deleted);
-  if(!ex) ex=payments.find(p=>p.templateId===tid && p.month===activeMonth && !p.deleted);
+  let tpl=templates.find(t=>t.id===tid);
+  let findPayFn = activeType==='expense'? findPayExpense : findPayIncome;
+  let ex=findPayFn(tid,activeMonth);
   let todayStr=new Date().toISOString().slice(0,10);
   if(ex){
     if(ex.paid){
@@ -565,128 +560,67 @@ function togglePaid(tid, occIdx){
     } else {
       if(activeType==='expense') expensePayments=expensePayments.map(p=>p.id===ex.id? {...p,paid:true,paidAt:new Date().toISOString()}:p);
       else incomePayments=incomePayments.map(p=>p.id===ex.id? {...p,paid:true,paidAt:new Date().toISOString()}:p);
-      if(tpl && !tpl.dueDate) tpl.dueDate=todayStr;
+      if(tpl && !tpl.dueDate){
+        tpl.dueDate=todayStr;
+      }
     }
   } else {
-    let newPay={id:uid(),templateId:tid,month:activeMonth,amount:null,paidAt:new Date().toISOString(),paid:true,snapshotName:tpl?.name,snapshotCategory:tpl?.category,occurrenceIndex:occ};
+    let newPay={id:uid(),templateId:tid,month:activeMonth,amount:null,paidAt:new Date().toISOString(),paid:true,snapshotName:tpl?.name,snapshotCategory:tpl?.category};
     if(activeType==='expense') expensePayments.push(newPay); else incomePayments.push(newPay);
-    if(tpl && !tpl.dueDate) tpl.dueDate=todayStr;
+    if(tpl && !tpl.dueDate){
+      tpl.dueDate=todayStr;
+    }
   }
   save(); renderAll();
 }
 
-let pendingDeleteId=null, pendingDeleteType='expense', deleteScope='all', pendingDeleteOccurrence=null;
-function deleteTpl(id, occIdx){
-  let templates = activeType==='expense'? expenseTemplates : incomeTemplates;
-  let t=templates.find(x=>x.id===id);
-  if(!t) return;
-  pendingDeleteOccurrence = (occIdx!==undefined && occIdx!==null && !isNaN(occIdx)) ? occIdx : null;
-  if(t.recurrence!=="none"){
-    pendingDeleteId=id;
-    pendingDeleteType=activeType;
-    deleteScope='all';
-    document.querySelectorAll("#deleteScopeBackdrop .scope-opt").forEach(o=>o.classList.toggle("selected", o.dataset.scope==="all"));
-    document.getElementById("deleteScopeDesc").innerHTML=`This ${activeType} repeats ${t.recurrence}. How would you like to delete for <strong>${labelM(activeMonth)}</strong>?`;
-    document.getElementById("deleteScopeBackdrop").classList.add("open");
-    return;
-  }
-  if(!confirm("Delete?")) return;
-  if(activeType==='expense'){ expenseTemplates=expenseTemplates.filter(x=>x.id!==id); expensePayments=expensePayments.filter(p=>p.templateId!==id); }
-  else { incomeTemplates=incomeTemplates.filter(x=>x.id!==id); incomePayments=incomePayments.filter(p=>p.templateId!==id); }
+function deleteTpl(id){
+  if(!confirm("Delete? Past payments preserved.")) return;
+  if(activeType==='expense') expenseTemplates=expenseTemplates.filter(t=>t.id!==id);
+  else incomeTemplates=incomeTemplates.filter(t=>t.id!==id);
   save(); renderAll();
 }
-function commitDelete(scope){
-  if(!pendingDeleteId) return;
-  let id=pendingDeleteId; let type=pendingDeleteType; let occ=pendingDeleteOccurrence;
-  if(type==='expense'){
-    if(scope==="single"){
-      if(occ!==null && !isNaN(occ)){
-        expensePayments.push({id:uid(),templateId:id,month:activeMonth,occurrenceIndex:occ,deleted:true,paid:false,amount:0});
-      } else {
-        expensePayments.push({id:uid(),templateId:id,month:activeMonth,deleted:true,paid:false,amount:0});
-      }
-    }
-    else if(scope==="forward"){ let keep=expensePayments.filter(p=>p.templateId===id && p.month<activeMonth); expensePayments=expensePayments.filter(p=>p.templateId!==id); keep.forEach(p=>expensePayments.push(p)); expenseTemplates=expenseTemplates.filter(x=>x.id!==id); }
-    else { expenseTemplates=expenseTemplates.filter(x=>x.id!==id); expensePayments=expensePayments.filter(p=>p.templateId!==id); }
-  } else {
-    if(scope==="single"){
-      if(occ!==null && !isNaN(occ)){
-        incomePayments.push({id:uid(),templateId:id,month:activeMonth,occurrenceIndex:occ,deleted:true,paid:false,amount:0});
-      } else {
-        incomePayments.push({id:uid(),templateId:id,month:activeMonth,deleted:true,paid:false,amount:0});
-      }
-    }
-    else if(scope==="forward"){ let keep=incomePayments.filter(p=>p.templateId===id && p.month<activeMonth); incomePayments=incomePayments.filter(p=>p.templateId!==id); keep.forEach(p=>incomePayments.push(p)); incomeTemplates=incomeTemplates.filter(x=>x.id!==id); }
-    else { incomeTemplates=incomeTemplates.filter(x=>x.id!==id); incomePayments=incomePayments.filter(p=>p.templateId!==id); }
-  }
-  pendingDeleteId=null; pendingDeleteOccurrence=null;
-}
 
-let editOccurrenceIndex=null;
-let originalData=null;
 function openNew(){
   editId=null;
-  editOccurrenceIndex=null;
-  originalData=null;
   editType=activeType;
   let isIncome = activeType==='income';
   document.getElementById("modalTitle").textContent=isIncome? "New Income" : "New Expense";
-  document.getElementById("f_due_label").textContent=isIncome? "Expected date (optional)" : "Due date (optional)";
   document.getElementById("f_name").value="";
   document.getElementById("f_amount").value="";
   document.getElementById("f_due").value="";
   document.getElementById("f_rec").value="monthly";
-  document.getElementById("f_currency").value="$";
-  let cc=document.getElementById("f_currency_custom"); if(cc){ cc.style.display="none"; cc.value=""; }
   let cats = isIncome? incomeCats : expenseCats;
   document.getElementById("f_cat").value=cats[0]|| (isIncome? "Other Income":"Other");
   document.getElementById("f_newcat").value="";
   document.getElementById("f_notes").value="";
   renderCats();
   document.getElementById("editBackdrop").classList.add("open");
-  let saveBtn=document.getElementById("saveEdit"); saveBtn.disabled=false; saveBtn.style.opacity="1"; saveBtn.style.cursor="pointer";
 }
 
-function openEdit(id, occIdx){
+function openEdit(id){
   let templates = activeType==='expense'? expenseTemplates : incomeTemplates;
   let payments = activeType==='expense'? expensePayments : incomePayments;
   let t=templates.find(x=>x.id===id); if(!t) return;
   editId=id;
-  editOccurrenceIndex = (occIdx!==undefined && occIdx!==null && !isNaN(occIdx)) ? occIdx : null;
   editType=activeType;
-  let pay=null;
-  if(editOccurrenceIndex!==null){
-    pay=payments.find(p=>p.templateId===id && p.month===activeMonth && p.occurrenceIndex===editOccurrenceIndex && !p.deleted);
-  }
-  if(!pay){
-    pay=payments.find(p=>p.templateId===id && p.month===activeMonth && (p.occurrenceIndex===undefined || p.occurrenceIndex===null) && !p.deleted);
-    if(!pay) pay=payments.find(p=>p.templateId===id && p.month===activeMonth && !p.deleted);
-  }
+  let pay=payments.find(p=>p.templateId===id && p.month===activeMonth);
   let nameVal = pay?.snapshotName || t.name;
   let amountVal = (pay && pay.amount!=null) ? pay.amount : t.amount;
   let dueVal = t.dueDate||"";
   let recVal = t.recurrence;
   let catVal = pay?.snapshotCategory || t.category;
   let notesVal = pay?.snapshotNotes || pay?.notes || t.notes || "";
-  let curVal = t.currency || "$";
   document.getElementById("modalTitle").textContent= activeType==='income'? "Edit Income" : "Edit Expense";
-  document.getElementById("f_due_label").textContent= activeType==='income'? "Expected date (optional)" : "Due date (optional)";
   document.getElementById("f_name").value=nameVal;
   document.getElementById("f_amount").value=amountVal;
   document.getElementById("f_due").value=dueVal;
   document.getElementById("f_rec").value=recVal;
   document.getElementById("f_cat").value=catVal;
   document.getElementById("f_notes").value=notesVal;
-  let sel=document.getElementById("f_currency");
-  let custom=document.getElementById("f_currency_custom");
-  if(sel){
-    if(["$","€","£","¥","₹","A$","C$","₦","R"].includes(curVal)){ sel.value=curVal; if(custom) custom.style.display="none"; }
-    else { sel.value="custom"; if(custom){ custom.style.display="block"; custom.value=curVal; } }
-  }
   renderCats();
   document.getElementById("f_cat").value=catVal;
   document.getElementById("editBackdrop").classList.add("open");
-  setTimeout(()=>{ captureOriginalData(); checkIfChanged(); }, 50);
 }
 
 function commitSave(data,scope){
@@ -713,13 +647,13 @@ function commitSave(data,scope){
   }
  } else if(scope==="single"){
   let occIdx = (typeof editOccurrenceIndex!=='undefined' && editOccurrenceIndex!==null && !isNaN(editOccurrenceIndex)) ? editOccurrenceIndex : null;
-  let payments = editType==='expense'? expensePayments : incomePayments;
+  let payList = editType==='expense'? expensePayments : incomePayments;
   let ex=null;
   if(occIdx!==null){
-    ex=payments.find(p=>p.templateId===editId && p.month===activeMonth && p.occurrenceIndex===occIdx && !p.deleted);
+    ex=payList.find(p=>p.templateId===editId && p.month===activeMonth && p.occurrenceIndex===occIdx && !p.deleted);
   }
   if(!ex){
-    ex=payments.find(p=>p.templateId===editId && p.month===activeMonth && (p.occurrenceIndex===undefined || p.occurrenceIndex===null) && !p.deleted);
+    ex=payList.find(p=>p.templateId===editId && p.month===activeMonth && (p.occurrenceIndex===undefined || p.occurrenceIndex===null) && !p.deleted);
   }
   if(!ex){
     let findFn = editType==='expense'? findPayExpense : findPayIncome;
@@ -772,51 +706,8 @@ document.getElementById("addCatBtn").onclick=()=>{
   document.getElementById("f_newcat").value="";
   save();
 };
-function captureOriginalData(){
-  if(!editId){ originalData=null; return; }
-  let templates = editType==='expense'? expenseTemplates : incomeTemplates;
-  let t=templates.find(x=>x.id===editId);
-  if(!t){ originalData=null; return; }
-  let payments = editType==='expense'? expensePayments : incomePayments;
-  let pay=null;
-  if(editOccurrenceIndex!==null) pay=payments.find(p=>p.templateId===editId && p.month===activeMonth && p.occurrenceIndex===editOccurrenceIndex && !p.deleted);
-  if(!pay) pay=payments.find(p=>p.templateId===editId && p.month===activeMonth && !p.deleted);
-  let nameVal = pay?.snapshotName || t.name;
-  let amountVal = (pay && pay.amount!=null) ? pay.amount : t.amount;
-  let dueVal = t.dueDate||"";
-  let recVal = t.recurrence;
-  let catVal = pay?.snapshotCategory || t.category;
-  let notesVal = pay?.snapshotNotes || pay?.notes || t.notes || "";
-  let curVal = t.currency || "$";
-  originalData={name:nameVal, amount:amountVal, dueDate:dueVal, recurrence:recVal, category:catVal, notes:notesVal, currency:curVal};
-}
-function checkIfChanged(){
-  let saveBtn=document.getElementById("saveEdit");
-  if(!editId){ saveBtn.disabled=false; saveBtn.style.opacity="1"; saveBtn.style.cursor="pointer"; return true; }
-  if(!originalData){ saveBtn.disabled=false; saveBtn.style.opacity="1"; saveBtn.style.cursor="pointer"; return true; }
-  let name=document.getElementById("f_name").value.trim();
-  let amountStr=document.getElementById("f_amount").value;
-  let due=document.getElementById("f_due").value;
-  let rec=document.getElementById("f_rec").value;
-  let cat=document.getElementById("f_cat").value;
-  let newCat=document.getElementById("f_newcat").value.trim();
-  let notes=document.getElementById("f_notes").value.trim();
-  let curSel=document.getElementById("f_currency").value;
-  let curCustom=document.getElementById("f_currency_custom").value.trim();
-  let currency = curSel==="custom"? (curCustom||"$") : curSel;
-  let finalCat=newCat||cat;
-  let amt=Number(amountStr);
-  let changed = name!==originalData.name || amt!==originalData.amount || due!==originalData.dueDate || rec!==originalData.recurrence || finalCat!==originalData.category || notes!==originalData.notes || currency!==originalData.currency;
-  saveBtn.disabled=!changed;
-  saveBtn.style.opacity=changed?"1":"0.5";
-  saveBtn.style.cursor=changed?"pointer":"not-allowed";
-  return changed;
-}
 document.getElementById("saveEdit").onclick=()=>{
  let name=document.getElementById("f_name").value.trim(); let amountStr=document.getElementById("f_amount").value; let due=document.getElementById("f_due").value; let rec=document.getElementById("f_rec").value; let cat=document.getElementById("f_cat").value; let newCat=document.getElementById("f_newcat").value.trim(); let notes=document.getElementById("f_notes").value.trim();
- let curSel=document.getElementById("f_currency").value; let curCustom=document.getElementById("f_currency_custom").value.trim();
- let currency = curSel==="custom"? (curCustom||"$") : curSel;
- if(!checkIfChanged() && editId){ return; }
  if(!name || !amountStr){alert("Please fill name and amount"); return;} let amt=Number(amountStr); if(isNaN(amt)||amt<=0){alert("Amount must be positive"); return;}
  let finalCat=newCat||cat|| (editType==='income'?"Other Income":"Other");
  if(newCat){
@@ -827,7 +718,7 @@ document.getElementById("saveEdit").onclick=()=>{
    }
    finalCat=newCat;
  }
- let data={name,amount:amt,dueDate:due||null,recurrence:rec,category:finalCat,notes,currency};
+ let data={name,amount:amt,dueDate:due||null,recurrence:rec,category:finalCat,notes};
  if(editId){
    let templates = editType==='expense'? expenseTemplates : incomeTemplates;
    let ex=templates.find(t=>t.id===editId);
@@ -851,26 +742,10 @@ document.getElementById("scopeApply").onclick=()=>{
   try{ if(pendingEdit){ commitSave(pendingEdit,selectedScope); } }catch(e){ console.error(e); }
   document.getElementById("scopeBackdrop").classList.remove("open");
   document.getElementById("editBackdrop").classList.remove("open");
-  pendingEdit=null; editId=null; editOccurrenceIndex=null;
+  pendingEdit=null; editId=null;
   try{ save(); }catch(e){ console.error("save failed", e); }
   renderAll();
 };
-document.querySelectorAll("#deleteScopeBackdrop .scope-opt").forEach(o=>{ o.onclick=()=>{ deleteScope=o.dataset.scope; document.querySelectorAll("#deleteScopeBackdrop .scope-opt").forEach(x=>x.classList.toggle("selected", x.dataset.scope===deleteScope)); };});
-document.getElementById("deleteScopeCancel").onclick=()=>{document.getElementById("deleteScopeBackdrop").classList.remove("open"); pendingDeleteId=null; pendingDeleteOccurrence=null;};
-document.getElementById("deleteScopeBackdrop").onclick=(e)=>{if(e.target.id==="deleteScopeBackdrop") document.getElementById("deleteScopeBackdrop").classList.remove("open");};
-document.getElementById("deleteScopeApply").onclick=()=>{
-  try{ commitDelete(deleteScope); }catch(e){ console.error(e); }
-  document.getElementById("deleteScopeBackdrop").classList.remove("open");
-  try{ save(); }catch(e){ console.error("save failed", e); }
-  renderAll();
-};
-let fCurrEl=document.getElementById("f_currency");
-if(fCurrEl){ fCurrEl.addEventListener('change', function(){ let custom=document.getElementById("f_currency_custom"); if(this.value==="custom"){ custom.style.display="block"; custom.focus(); } else { custom.style.display="none"; } checkIfChanged(); }); }
-["f_name","f_amount","f_due","f_rec","f_cat","f_newcat","f_notes","f_currency_custom"].forEach(id=>{
-  let el=document.getElementById(id);
-  if(el){ el.addEventListener('input', checkIfChanged); el.addEventListener('change', checkIfChanged); }
-});
-
 document.getElementById("exportBtn").onclick=()=>{
   try{
     let blob=new Blob([JSON.stringify({expenseTemplates,expensePayments,expenseCategories:expenseCats,incomeTemplates,incomePayments,incomeCategories:incomeCats,isDark,version:11,exportedAt:new Date().toISOString()},null,2)],{type:"application/json"});
