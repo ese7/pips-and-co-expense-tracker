@@ -1,6 +1,6 @@
 {
-  "name": "Pips & Co Expense Tracker",
-  "short_name": "Expense Tracker",
+  "name": "Pips & Co Budget Tracker",
+  "short_name": "Budget Tracker",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#0f1115",
