@@ -158,11 +158,19 @@ html.light .type-toggle button.expense.active{background:#dc2626}
 /* Fix dropdown arrow padding and calendar icon */
 .modal select.input{
   padding-right:42px !important;
+  appearance:none !important;
+  -webkit-appearance:none !important;
+  -moz-appearance:none !important;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
   background-repeat:no-repeat !important;
   background-position:right 14px center !important;
   background-size:12px !important;
 }
+.modal select.input::-ms-expand{display:none !important;}
+/* Remove duplicate native arrow on WebKit */
+.modal select.input::-webkit-inner-spin-button,
+.modal select.input::-webkit-outer-spin-button{appearance:none !important;}
+
 .modal .input[type="date"]{
   padding-right:42px !important;
   position:relative;
@@ -188,13 +196,9 @@ html.light .modal .input[type="date"]::-webkit-calendar-picker-indicator{
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
 }
 /* Mobile dark mode same color as desktop dark mode */
+/* Mobile dark same as desktop */
 @media(max-width:768px){
-  .modal select.input{
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
-  }
-  .modal .input[type="date"]::-webkit-calendar-picker-indicator{
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E") !important;
-  }
+  .modal select.input{color-scheme:dark;}
 }
 .modal .input[type="date"]::-webkit-datetime-edit{padding-right:10px}
 
@@ -751,12 +755,12 @@ function openEdit(id, occIdx){
 }
 
 function commitSave(data,scope){
- let {name,amount,dueDate,recurrence,category,notes}=data;
+ let {name,amount,dueDate,recurrence,category,notes,currency}=data;
  let templates = editType==='expense'? expenseTemplates : incomeTemplates;
  let payments = editType==='expense'? expensePayments : incomePayments;
  
  if(!editId){
-   const t={id:uid(),name,amount,dueDate:dueDate||null,recurrence,category,createdAt:new Date().toISOString()};
+   const t={id:uid(),name,amount,dueDate:dueDate||null,recurrence,category,currency:currency||"$",createdAt:new Date().toISOString()};
    if(notes) t.notes=notes;
    if(editType==='expense') expenseTemplates.push(t); else incomeTemplates.push(t);
    return;
@@ -764,30 +768,41 @@ function commitSave(data,scope){
  let existing=templates.find(t=>t.id===editId); if(!existing) return;
  if(scope==="all" || !existing || existing.recurrence==="none"){
   if(editType==='expense'){
-    expenseTemplates=expenseTemplates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
+    expenseTemplates=expenseTemplates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category,currency:currency||t.currency||"$"}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
   } else {
-    incomeTemplates=incomeTemplates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
+    incomeTemplates=incomeTemplates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category,currency:currency||t.currency||"$"}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
   }
   if(scope==="all"){
     if(editType==='expense') expensePayments=expensePayments.map(p=> p.templateId===editId? {...p,snapshotName:name,snapshotCategory:category,snapshotNotes:notes}:p);
     else incomePayments=incomePayments.map(p=> p.templateId===editId? {...p,snapshotName:name,snapshotCategory:category,snapshotNotes:notes}:p);
   }
  } else if(scope==="single"){
-  let findFn = editType==='expense'? findPayExpense : findPayIncome;
-  let ex=findFn(editId,activeMonth);
+  let occIdx = (typeof editOccurrenceIndex!=='undefined' && editOccurrenceIndex!==null && !isNaN(editOccurrenceIndex)) ? editOccurrenceIndex : null;
+  let payList = editType==='expense'? expensePayments : incomePayments;
+  let ex=null;
+  if(occIdx!==null){
+    ex=payList.find(p=>p.templateId===editId && p.month===activeMonth && p.occurrenceIndex===occIdx && !p.deleted);
+  }
+  if(!ex){
+    ex=payList.find(p=>p.templateId===editId && p.month===activeMonth && (p.occurrenceIndex===undefined || p.occurrenceIndex===null) && !p.deleted);
+  }
+  if(!ex){
+    let findFn = editType==='expense'? findPayExpense : findPayIncome;
+    ex=findFn(editId,activeMonth);
+  }
   if(ex){
-    if(editType==='expense') expensePayments=expensePayments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes}:p);
-    else incomePayments=incomePayments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes}:p);
+    if(editType==='expense') expensePayments=expensePayments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes,occurrenceIndex: occIdx!==null? occIdx : p.occurrenceIndex}:p);
+    else incomePayments=incomePayments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,occurrenceIndex: occIdx!==null? occIdx : p.occurrenceIndex}:p);
   } else {
-    let newPay={id:uid(),templateId:editId,month:activeMonth,amount,paidAt:new Date().toISOString(),paid:false,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes};
+    let newPay={id:uid(),templateId:editId,month:activeMonth,amount,paidAt:new Date().toISOString(),paid:false,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes,occurrenceIndex: occIdx};
     if(editType==='expense') expensePayments.push(newPay); else incomePayments.push(newPay);
   }
  } else if(scope==="forward"){
   if(editType==='expense'){
-    expenseTemplates=expenseTemplates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
+    expenseTemplates=expenseTemplates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category,currency:currency||t.currency||"$"}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
     expensePayments=expensePayments.map(p=>{ if(p.templateId!==editId) return p; if(p.month>=activeMonth){ return {...p,amount: p.amount!=null? amount: p.amount, snapshotName:name,snapshotCategory:category,snapshotNotes:notes}; } return p; });
   } else {
-    incomeTemplates=incomeTemplates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
+    incomeTemplates=incomeTemplates.map(t=>{ if(t.id!==editId) return t; const nt={...t,name,amount,dueDate:dueDate||null,recurrence,category,currency:currency||t.currency||"$"}; if(notes) nt.notes=notes; else delete nt.notes; return nt; });
     incomePayments=incomePayments.map(p=>{ if(p.templateId!==editId) return p; if(p.month>=activeMonth){ return {...p,amount: p.amount!=null? amount: p.amount, snapshotName:name,snapshotCategory:category,snapshotNotes:notes}; } return p; });
   }
  }
