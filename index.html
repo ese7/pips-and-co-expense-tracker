@@ -376,6 +376,7 @@ function isPaidIncome(tid,m){let p=findPayIncome(tid,m); return p? p.paid!==fals
 function isPaid(tid,m){return activeType==='expense'? isPaidExpense(tid,m): isPaidIncome(tid,m)}
 
 function getDue(tpl,mStr){
+  if(tpl.deletedFromMonth && mStr >= tpl.deletedFromMonth) return null;
   if(!tpl.dueDate) return null;
   let due=parseD(tpl.dueDate);
   let {y,m}=parseM(mStr);
@@ -447,6 +448,7 @@ function computeMonthData(templates, payments, filterCat){
     try{
       let createdM = t.createdAt ? t.createdAt.slice(0,7) : null;
       if(!t.dueDate && createdM && createdM > activeMonth) return;
+      if(t.deletedFromMonth && activeMonth >= t.deletedFromMonth) return;
       if(!t.dueDate){
         let pay=payments.find(p=>p.templateId===t.id && p.month===activeMonth && !p.deleted);
         let displayTpl = pay?.snapshotName ? {...t, name:pay.snapshotName, category:pay.snapshotCategory||t.category, notes:pay.snapshotNotes||t.notes} : t;
@@ -693,7 +695,24 @@ function commitDelete(scope){
         expensePayments.push({id:uid(),templateId:id,month:activeMonth,deleted:true,paid:false,amount:0});
       }
     }
-    else if(scope==="forward"){ let keep=expensePayments.filter(p=>p.templateId===id && p.month<activeMonth); expensePayments=expensePayments.filter(p=>p.templateId!==id); keep.forEach(p=>expensePayments.push(p)); expenseTemplates=expenseTemplates.filter(x=>x.id!==id); }
+    else if(scope==="forward"){
+      expensePayments = expensePayments.filter(p=>{
+        if(p.templateId!==id) return true;
+        if(p.month < activeMonth) return true;
+        if(p.month===activeMonth && occ!==null && p.occurrenceIndex!==undefined && p.occurrenceIndex < occ) return true;
+        return false;
+      });
+      if(occ!==null){
+        let tpl = expenseTemplates.find(t=>t.id===id);
+        let dues = getDue({...tpl, deletedFromMonth:null}, activeMonth) || [];
+        for(let i=occ; i<dues.length; i++){
+          expensePayments.push({id:uid(),templateId:id,month:activeMonth,occurrenceIndex:i,deleted:true,paid:false,amount:0});
+        }
+        expenseTemplates = expenseTemplates.map(t=> t.id===id ? {...t, deletedFromMonth: addM(activeMonth,1)} : t);
+      } else {
+        expenseTemplates = expenseTemplates.map(t=> t.id===id ? {...t, deletedFromMonth: activeMonth} : t);
+      }
+    }
     else { expenseTemplates=expenseTemplates.filter(x=>x.id!==id); expensePayments=expensePayments.filter(p=>p.templateId!==id); }
   } else {
     if(scope==="single"){
@@ -703,7 +722,24 @@ function commitDelete(scope){
         incomePayments.push({id:uid(),templateId:id,month:activeMonth,deleted:true,paid:false,amount:0});
       }
     }
-    else if(scope==="forward"){ let keep=incomePayments.filter(p=>p.templateId===id && p.month<activeMonth); incomePayments=incomePayments.filter(p=>p.templateId!==id); keep.forEach(p=>incomePayments.push(p)); incomeTemplates=incomeTemplates.filter(x=>x.id!==id); }
+    else if(scope==="forward"){
+      incomePayments = incomePayments.filter(p=>{
+        if(p.templateId!==id) return true;
+        if(p.month < activeMonth) return true;
+        if(p.month===activeMonth && occ!==null && p.occurrenceIndex!==undefined && p.occurrenceIndex < occ) return true;
+        return false;
+      });
+      if(occ!==null){
+        let tpl = incomeTemplates.find(t=>t.id===id);
+        let dues = getDue({...tpl, deletedFromMonth:null}, activeMonth) || [];
+        for(let i=occ; i<dues.length; i++){
+          incomePayments.push({id:uid(),templateId:id,month:activeMonth,occurrenceIndex:i,deleted:true,paid:false,amount:0});
+        }
+        incomeTemplates = incomeTemplates.map(t=> t.id===id ? {...t, deletedFromMonth: addM(activeMonth,1)} : t);
+      } else {
+        incomeTemplates = incomeTemplates.map(t=> t.id===id ? {...t, deletedFromMonth: activeMonth} : t);
+      }
+    }
     else { incomeTemplates=incomeTemplates.filter(x=>x.id!==id); incomePayments=incomePayments.filter(p=>p.templateId!==id); }
   }
   pendingDeleteId=null; pendingDeleteOccurrence=null;
