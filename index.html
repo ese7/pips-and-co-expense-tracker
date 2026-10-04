@@ -153,6 +153,9 @@ html.light .type-toggle button.expense.active{background:#dc2626}
 }
 /* Ensure gap between total tab and 2 tabs matches gap to period section (18px) */
 #totalsGrid{ gap:18px; margin-bottom:18px !important }
+@media(max-width:639px){
+  .modal-row-top{grid-template-columns:1fr 1fr !important}
+}
 
 </style>
 <script src="./firebase-config.js"></script>
@@ -210,7 +213,15 @@ html.light .type-toggle button.expense.active{background:#dc2626}
 
 <footer style="padding:18px 0;margin-top:18px;border-top:1px solid var(--border-dark)"><div class="container" style="text-align:center;font-size:11px;color:var(--muted)">Built with <span style="color:#ef4444">♥</span> by <a href="https://sitestars.net/" target="_blank">Sitestars</a></div></footer>
 
-<div id="editBackdrop" class="modal-backdrop"><div class="modal"><h3 id="modalTitle" style="margin:0 0 3px 0;font-size:15px;font-weight:600">New Expense</h3><div style="display:grid;gap:10px"><div><label>Name</label><input id="f_name" class="input" placeholder="e.g. Rent, Groceries"></div><div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,0.9fr) minmax(0,1fr);gap:8px;min-width:0"><div style="min-width:0"><label>Amount</label><input id="f_amount" class="input" type="number" step="0.01" placeholder="0.00"></div><div style="min-width:0"><label>Currency</label><select id="f_currency" class="input"><option value="$">$ USD</option><option value="€">€ EUR</option><option value="£">£ GBP</option><option value="¥">¥ JPY</option><option value="₹">₹ INR</option><option value="A$">A$ AUD</option><option value="C$">C$ CAD</option><option value="₦">₦ NGN</option><option value="R">R ZAR</option><option value="custom">Custom</option></select><input id="f_currency_custom" class="input" placeholder="Symbol" style="display:none;margin-top:6px"></div><div style="min-width:0"><label>Due date (optional)</label><input id="f_due" class="input" type="date"></div></div><div><label>Recurrence</label><select id="f_rec" class="input"><option value="none">None</option><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="biweekly">Bi-Weekly</option><option value="yearly">Yearly</option><option value="quarterly">Quarterly</option><option value="semiannually">Semi-annually</option></select></div><div><label>Category</label><select id="f_cat" class="input"></select><div style="display:flex;gap:6px;margin-top:6px"><input id="f_newcat" class="input" placeholder="New category" style="flex:1"><button id="addCatBtn" class="btn btn-ghost">Add</button></div></div><div><label>Notes (optional)</label><input id="f_notes" class="input" placeholder="Optional notes"></div></div><div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="cancelEdit" class="btn btn-ghost">Cancel</button><button id="saveEdit" class="btn btn-primary">Save</button></div></div></div>
+<div id="editBackdrop" class="modal-backdrop"><div class="modal"><h3 id="modalTitle" style="margin:0 0 3px 0;font-size:15px;font-weight:600">New Expense</h3><div style="display:grid;gap:10px"><div><label>Name</label><input id="f_name" class="input" placeholder="e.g. Rent, Groceries"></div>
+<div class="modal-row-top" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,0.9fr);gap:8px;min-width:0">
+  <div style="min-width:0"><label>Amount</label><input id="f_amount" class="input" type="number" step="0.01" placeholder="0.00"></div>
+  <div style="min-width:0"><label>Currency</label>
+    <div style="display:flex;gap:6px"><select id="f_currency" class="input" style="flex:1"><option value="$">$ USD</option><option value="€">€ EUR</option><option value="£">£ GBP</option><option value="¥">¥ JPY</option><option value="₹">₹ INR</option><option value="A$">A$ AUD</option><option value="C$">C$ CAD</option><option value="₦">₦ NGN</option><option value="R">R ZAR</option><option value="custom">Custom</option></select><input id="f_currency_custom" class="input" placeholder="Symbol" style="display:none;flex:1;min-width:70px"></div>
+  </div>
+</div>
+<div style="min-width:0"><label>Due date (optional)</label><input id="f_due" class="input" type="date"></div>
+</div><div><label>Recurrence</label><select id="f_rec" class="input"><option value="none">None</option><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="biweekly">Bi-Weekly</option><option value="yearly">Yearly</option><option value="quarterly">Quarterly</option><option value="semiannually">Semi-annually</option></select></div><div><label>Category</label><select id="f_cat" class="input"></select><div style="display:flex;gap:6px;margin-top:6px"><input id="f_newcat" class="input" placeholder="New category" style="flex:1"><button id="addCatBtn" class="btn btn-ghost">Add</button></div></div><div><label>Notes (optional)</label><input id="f_notes" class="input" placeholder="Optional notes"></div></div><div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="cancelEdit" class="btn btn-ghost">Cancel</button><button id="saveEdit" class="btn btn-primary">Save</button></div></div></div>
 
 <div id="scopeBackdrop" class="modal-backdrop" style="z-index:60"><div class="modal" style="max-width:440px"><h3 style="margin:0 0 4px 0;font-size:15px;font-weight:600">Edit recurring</h3><div id="scopeDesc" style="font-size:11px;color:var(--muted)"></div><div style="margin-top:10px"><div class="scope-opt selected" data-scope="single"><div class="dot"></div><div><div class="scope-title">This single entry</div><div class="scope-desc">Only this month will be changed.</div></div></div><div class="scope-opt" data-scope="forward"><div class="dot"></div><div><div class="scope-title">Current entry going forward</div><div class="scope-desc">This and all future months will use the new values.</div></div></div><div class="scope-opt" data-scope="all"><div class="dot"></div><div><div class="scope-title">All entries</div><div class="scope-desc">Every occurrence in the series will be updated.</div></div></div></div><div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="scopeCancel" class="btn btn-ghost">Cancel</button><button id="scopeApply" class="btn btn-primary">Apply</button></div></div></div>
 
@@ -255,6 +266,24 @@ let incomeTemplates=data?.incomeTemplates||[];
 let incomePayments=data?.incomePayments||[];
 let incomeCats=data?.incomeCategories?.length? data.incomeCategories : DEFAULT_INCOME_CATS.slice();
 
+// CLEANUP ORPHANED PAYMENTS - fixes persisted $2500 after delete
+// Remove payments whose template no longer exists (orphaned archive that was counting in totals)
+let orphanBefore = expensePayments.length + incomePayments.length;
+expensePayments = expensePayments.filter(p=>{
+  if(p.deleted) return false; // also clear deleted markers from old logic
+  return expenseTemplates.some(t=>t.id===p.templateId);
+});
+incomePayments = incomePayments.filter(p=>{
+  if(p.deleted) return false;
+  return incomeTemplates.some(t=>t.id===p.templateId);
+});
+let orphanAfter = expensePayments.length + incomePayments.length;
+if(orphanBefore!==orphanAfter){
+  console.log(`Cleaned ${orphanBefore-orphanAfter} orphaned payments`);
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({expenseTemplates, expensePayments, expenseCategories:expenseCats, incomeTemplates, incomePayments, incomeCategories:incomeCats, isDark, version:12, savedAt:new Date().toISOString()})); }catch{}
+}
+
+
 let isDark=(()=>{if(data && typeof data.isDark==="boolean") return data.isDark; try{let v=localStorage.getItem("pips_expense_dark_mode"); if(v!==null) return JSON.parse(v)}catch{} try{return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches}catch{return true}})();
 let activeMonth=curM();
 let activeType='expense'; // expense | income
@@ -290,18 +319,48 @@ function isPaid(tid,m){return activeType==='expense'? isPaidExpense(tid,m): isPa
 
 function getDue(tpl,mStr){
   if(!tpl.dueDate) return null;
-  let due=parseD(tpl.dueDate);
-  let {y,m}=parseM(mStr);
-  let dueY=due.getFullYear(), dueM=due.getMonth();
-  let diff=(y-dueY)*12 + (m-dueM);
-  let rec=tpl.recurrence||"none";
-  if(diff<0) return null;
-  if(rec==="none"){ if(diff===0) return new Date(y,m,Math.min(due.getDate(),dim(y,m))); return null; }
-  if(rec==="yearly"){ if(diff%12!==0) return null; return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
-  if(rec==="quarterly"){ if(diff%3!==0) return null; return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
-  if(rec==="semiannually"){ if(diff%6!==0) return null; return new Date(y,m,Math.min(due.getDate(),dim(y,m))); }
-  // weekly and biweekly treated as monthly for single occurrence per month (to avoid UI break)
-  return new Date(y,m,Math.min(due.getDate(),dim(y,m)));
+  try{
+    let due=parseD(tpl.dueDate);
+    let {y,m}=parseM(mStr);
+    let dueY=due.getFullYear(), dueM=due.getMonth();
+    let diff=(y-dueY)*12 + (m-dueM);
+    let rec=tpl.recurrence||"none";
+    if(diff<0) return null;
+    let mkDate = (d)=> new Date(y,m,Math.min(d||due.getDate(),dim(y,m)));
+    if(rec==="none"){ if(diff===0) return [mkDate()]; return null; }
+    if(rec==="yearly"){ if(diff%12!==0) return null; return [mkDate()]; }
+    if(rec==="quarterly"){ if(diff%3!==0) return null; return [mkDate()]; }
+    if(rec==="semiannually"){ if(diff%6!==0) return null; return [mkDate()]; }
+    if(rec==="weekly"||rec==="biweekly"){
+      let interval = rec==="weekly"? 7 : 14;
+      let results=[];
+      let monthStart = new Date(y,m,1);
+      let monthEnd = new Date(y,m,dim(y,m),23,59,59);
+      let start = new Date(due);
+      // Advance start to first occurrence >= monthStart
+      if(start < monthStart){
+        let diffDays = Math.ceil((monthStart - start)/86400000);
+        let steps = Math.floor(diffDays / interval);
+        start = new Date(start.getTime() + steps*interval*86400000);
+        while(start < monthStart){
+          start = new Date(start.getTime() + interval*86400000);
+        }
+      }
+      let cur = new Date(start);
+      let guard=0;
+      while(cur <= monthEnd && guard<20){
+        results.push(new Date(cur));
+        cur = new Date(cur.getTime() + interval*86400000);
+        guard++;
+      }
+      if(results.length===0){
+        // Fallback: at least one in month if diff>=0
+        results.push(mkDate());
+      }
+      return results;
+    }
+    return [mkDate()];
+  }catch(e){ console.error('getDue error', e); return null; }
 }
 
 function earliest(){
@@ -319,29 +378,39 @@ function computeMonthData(templates, payments, filterCat){
   let dated=[], nodue=[], archive=[];
   let filtered=filterCat? templates.filter(t=>t.category===filterCat): templates;
   filtered.forEach(t=>{
-    let createdM = t.createdAt ? t.createdAt.slice(0,7) : null;
-    if(!t.dueDate && createdM && createdM > activeMonth) return;
-    if(!t.dueDate){
-      let pay=payments.find(p=>p.templateId===t.id && p.month===activeMonth && !p.deleted);
-      if(pay && pay.deleted) return;
-      let displayTpl = pay?.snapshotName ? {...t, name:pay.snapshotName, category:pay.snapshotCategory||t.category, notes:pay.snapshotNotes||t.notes} : t;
-      let paid = pay? pay.paid!==false : false;
-      let amt = (pay && pay.amount!=null)? pay.amount : t.amount;
-      nodue.push({tpl:displayTpl, origTpl:t, paid, amt, currency:t.currency||'$'});
-      return;
-    }
-    let due=getDue(t,activeMonth); if(!due) return;
-    let pay=payments.find(p=>p.templateId===t.id && p.month===activeMonth && !p.deleted);
-    if(pay && pay.deleted) return;
-    let displayTpl = pay?.snapshotName ? {...t, name:pay.snapshotName, category:pay.snapshotCategory||t.category, notes:pay.snapshotNotes||t.notes} : t;
-    let paid = pay? pay.paid!==false : false;
-    let amt = (pay && pay.amount!=null)? pay.amount : t.amount;
-    dated.push({tpl:displayTpl, origTpl:t, due, paid, amt, currency:t.currency||'$'});
+    try{
+      let createdM = t.createdAt ? t.createdAt.slice(0,7) : null;
+      if(!t.dueDate && createdM && createdM > activeMonth) return;
+      if(!t.dueDate){
+        let pay=payments.find(p=>p.templateId===t.id && p.month===activeMonth && !p.deleted);
+        if(pay && pay.deleted) return;
+        let displayTpl = pay?.snapshotName ? {...t, name:pay.snapshotName, category:pay.snapshotCategory||t.category, notes:pay.snapshotNotes||t.notes} : t;
+        let paid = pay? pay.paid!==false : false;
+        let amt = (pay && pay.amount!=null)? pay.amount : t.amount;
+        nodue.push({tpl:displayTpl, origTpl:t, paid, amt, currency:t.currency||'$'});
+        return;
+      }
+      let dues=getDue(t,activeMonth); if(!dues) return;
+      if(!Array.isArray(dues)) dues=[dues];
+      dues.forEach((due, idx)=>{
+        let delPay = payments.find(p=>p.templateId===t.id && p.month===activeMonth && p.deleted && (p.occurrenceIndex===idx || p.occurrenceIndex===undefined));
+        if(delPay) return;
+        let occPay = payments.find(p=>p.templateId===t.id && p.month===activeMonth && p.occurrenceIndex===idx && !p.deleted);
+        let genericPay = payments.find(p=>p.templateId===t.id && p.month===activeMonth && p.occurrenceIndex===undefined && !p.deleted);
+        let effectivePay = occPay || genericPay;
+        let displayTpl = effectivePay?.snapshotName ? {...t, name:effectivePay.snapshotName, category:effectivePay.snapshotCategory||t.category, notes:effectivePay.snapshotNotes||t.notes} : t;
+        let paid = effectivePay? effectivePay.paid!==false : false;
+        let amt = (effectivePay && effectivePay.amount!=null)? effectivePay.amount : t.amount;
+        dated.push({tpl:displayTpl, origTpl:t, due, paid, amt, currency:t.currency||'$', occurrenceIndex:idx});
+      });
+    }catch(e){ console.error('compute error', e); }
   });
-  payments.filter(p=>p.month===activeMonth).forEach(p=>{
+  payments.filter(p=>p.month===activeMonth && !p.deleted).forEach(p=>{
     if(!templates.find(t=>t.id===p.templateId)){
       let amt=p.amount!=null? p.amount:0;
-      archive.push({amt,cat:p.snapshotCategory||"Other", payment:p});
+      // Archive no longer counts toward totals for current month (fixes persisted deleted amounts)
+      // Keep for history but don't add to totals
+      // archive.push({amt,cat:p.snapshotCategory||"Other", payment:p});
     }
   });
   let paidNodue = nodue.filter(x=>x.paid);
@@ -362,12 +431,12 @@ function renderTotals(){
   if(activeType==='expense'){
     // Total Expense vs Total Income
     el.totalsGrid.innerHTML=`
-      <div class="card total-first"><div class="totals-label">Total Expense / Total Income</div><div class="totals-value" style="font-size:18px">$${exp.total.toFixed(2)} <span style="font-size:12px;color:var(--muted);font-weight:400">/</span> $${inc.total.toFixed(2)}</div><div style="font-size:10px;color:var(--muted);margin-top:4px">Net: $${(inc.total-exp.total).toFixed(2)} <span style="font-size:6px">${inc.total>=exp.total?'🟢':'🔴'}</span></div></div>
+      <div class="card total-first"><div class="totals-label">Total Expense / Total Income</div><div class="totals-value" style="font-size:18px">$${exp.total.toFixed(2)} <span style="font-size:12px;color:var(--muted);font-weight:400">/</span> $${inc.total.toFixed(2)}</div><div style="font-size:10px;color:var(--muted);margin-top:4px">Net: $${(inc.total-exp.total).toFixed(2)} <span style="font-size:7px">${inc.total>=exp.total?'🟢':'🔴'}</span></div></div>
       <div class="card"><div class="totals-label">Paid Expense</div><div class="totals-value totals-paid">$${exp.paid.toFixed(2)}</div></div>
       <div class="card"><div class="totals-label">Unpaid Expense</div><div class="totals-value totals-unpaid">$${exp.unpaid.toFixed(2)}</div></div>`;
   } else {
     el.totalsGrid.innerHTML=`
-      <div class="card total-first"><div class="totals-label">Total Income / Total Expense</div><div class="totals-value" style="font-size:18px">$${inc.total.toFixed(2)} <span style="font-size:12px;color:var(--muted);font-weight:400">/</span> $${exp.total.toFixed(2)}</div><div style="font-size:10px;color:var(--muted);margin-top:4px">Net: $${(inc.total-exp.total).toFixed(2)} <span style="font-size:6px">${inc.total>=exp.total?'🟢':'🔴'}</span></div></div>
+      <div class="card total-first"><div class="totals-label">Total Income / Total Expense</div><div class="totals-value" style="font-size:18px">$${inc.total.toFixed(2)} <span style="font-size:12px;color:var(--muted);font-weight:400">/</span> $${exp.total.toFixed(2)}</div><div style="font-size:10px;color:var(--muted);margin-top:4px">Net: $${(inc.total-exp.total).toFixed(2)} <span style="font-size:7px">${inc.total>=exp.total?'🟢':'🔴'}</span></div></div>
       <div class="card"><div class="totals-label">Realized Income</div><div class="totals-value totals-paid">$${inc.paid.toFixed(2)}</div></div>
       <div class="card"><div class="totals-label">Unrealized Income</div><div class="totals-value totals-unpaid">$${inc.unpaid.toFixed(2)}</div></div>`;
   }
