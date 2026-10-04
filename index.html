@@ -365,8 +365,8 @@ function sunIcon(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill=
 function moonIcon(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`}
 function applyTheme(){document.documentElement.classList.toggle("light",!isDark); el.themeBtn.innerHTML=isDark? sunIcon(): moonIcon(); el.logoImg.src=isDark? LOGO_DARK : LOGO_LIGHT; renderAll();}
 
-function findPayExpense(tid,m){return expensePayments.find(p=>p.templateId===tid && p.month===m)}
-function findPayIncome(tid,m){return incomePayments.find(p=>p.templateId===tid && p.month===m)}
+function findPayExpense(tid,m){return expensePayments.find(p=>p.templateId===tid && p.month===m && !p.deleted)}
+function findPayIncome(tid,m){return incomePayments.find(p=>p.templateId===tid && p.month===m && !p.deleted)}
 function findPay(tid,m){return activeType==='expense'? findPayExpense(tid,m): findPayIncome(tid,m)}
 function dispAmtExpense(tpl,m){let p=findPayExpense(tpl.id,m); if(p && p.amount!=null) return p.amount; return tpl.amount}
 function dispAmtIncome(tpl,m){let p=findPayIncome(tpl.id,m); if(p && p.amount!=null) return p.amount; return tpl.amount}
@@ -839,14 +839,14 @@ function commitSave(data,scope){
   let payList = editType==='expense'? expensePayments : incomePayments;
   let ex=null;
   if(occIdx!==null){
+    // For weekly/biweekly, edit ONLY that specific occurrence - don't fallback to generic
     ex=payList.find(p=>p.templateId===editId && p.month===activeMonth && p.occurrenceIndex===occIdx && !p.deleted);
-  }
-  if(!ex){
+  } else {
     ex=payList.find(p=>p.templateId===editId && p.month===activeMonth && (p.occurrenceIndex===undefined || p.occurrenceIndex===null) && !p.deleted);
-  }
-  if(!ex){
-    let findFn = editType==='expense'? findPayExpense : findPayIncome;
-    ex=findFn(editId,activeMonth);
+    if(!ex){
+      let findFn = editType==='expense'? findPayExpense : findPayIncome;
+      ex=findFn(editId,activeMonth);
+    }
   }
   if(ex){
     if(editType==='expense') expensePayments=expensePayments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes,occurrenceIndex: occIdx!==null? occIdx : p.occurrenceIndex}:p);
