@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Pips & Co Budget Tracker</title>
+<meta name="theme-color" content="#0f1115">
+<link rel="manifest" href="./manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Expense Tracker">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png">
+<style>
+*{box-sizing:border-box}
+:root{--bg:#0f1115;--bg2:#171a21;--bg3:#21242e;--card:#181b22;--border:#e5e7eb;--border-dark:#252a36;--text:#f5f5f7;--muted:#9ca3af;--blue:#2563eb}
+html.light{--bg:#f9fafb;--bg2:#ffffff;--bg3:#f1f5f9;--card:#ffffff;--border:#e5e7eb;--border-dark:#e5e7eb;--text:#111827;--muted:#9ca3af}
+body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:var(--bg);color:var(--text);min-height:100vh;font-weight:400;-webkit-font-smoothing:antialiased}
+.container{max-width:1360px;margin:0 auto;padding:0 16px}
+@media(min-width:768px){.container{padding:0 24px}}
+@media(min-width:1280px){.container{padding:0 32px}}
+header{position:sticky;top:0;z-index:20;border-bottom:1px solid var(--border-dark);background:var(--bg)}
+html.light header{border-bottom-color:var(--border)}
+.header-inner{display:flex;justify-content:space-between;align-items:center;padding:12px 0;gap:12px;max-width:1360px;margin:0 auto;width:100%}
+.logo-block{display:flex;flex-direction:column;min-width:0;flex:1}
+.logo-row{display:flex;align-items:center;gap:6px;min-width:0}
+.logo-link{display:inline-flex;align-items:center;text-decoration:none;flex-shrink:0}
+.logo-img{height:20px;width:auto;max-width:140px;object-fit:contain;object-position:left;display:block}
+@media(min-width:640px){.logo-img{height:23px;max-width:180px}}
+.logo-divider{width:1px;height:14px;background:var(--border-dark);margin:0 2px;flex-shrink:0}
+html.light.logo-divider{background:var(--border)}
+.logo-suffix{font-size:12px;font-weight:500;color:var(--muted);letter-spacing:-0.01em;white-space:nowrap;flex-shrink:0}
+.subtitle{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.3;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;font-style:italic}
+@media(min-width:640px){.subtitle{max-width:500px}}
+@media(max-width:639px){.subtitle{display:none!important}}
+.btn{border:1px solid var(--border-dark);border-radius:9999px;padding:7px 14px;font-size:12px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all.15s}
+html.light.btn{border-color:var(--border)}
+.btn-primary{background:#2563eb;border-color:#2563eb;color:#fff;font-weight:600}
+.btn-primary:hover{background:#1d4ed8}
+.btn-ghost{background:var(--bg2);color:var(--text);border-color:var(--border-dark);font-weight:500}
+html.light.btn-ghost{border-color:var(--border)}
+.card{border:1px solid var(--border-dark);border-radius:16px;background:var(--card);padding:14px;transition:all.2s}
+html.light.card{border-color:var(--border)}
+.pill{font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.9;font-weight:600;margin-bottom:10px;color:var(--muted)}
+.badge{font-size:10px;padding:2px 7px;border-radius:9999px;border:1px solid var(--border-dark);background:var(--bg2);color:var(--muted);font-weight:500}
+html.light.badge{border-color:var(--border)}
+.badge-amber{background:rgba(251,191,36,0.12);border-color:rgba(251,191,36,0.35);color:#fcd34d;font-weight:600}
+html.light.badge-amber{background:rgba(251,191,36,0.16);border-color:rgba(251,191,36,0.4);color:#92400e}
+.badge-red{background:rgba(248,113,113,0.12);border-color:rgba(248,113,113,0.35);color:#fca5a5;font-weight:600}
+html.light.badge-red{background:rgba(254,226,226,0.8);border-color:rgba(239,68,68,0.3);color:#991b1b}
+.badge-green{background:rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.35);color:#6ee7b7;font-weight:600}
+html.light.badge-green{background:rgba(209,250,229,0.8);border-color:rgba(16,185,129,0.4);color:#065f46}
+.grid3{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:640px){.grid3{grid-template-columns:repeat(3,1fr)}}
+.totals-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-weight:600}
+.totals-value{font-size:20px;font-weight:600;letter-spacing:-0.015em;line-height:1}
+@media(min-width:768px){.totals-value{font-size:21px}}
+.totals-paid{color:#10b981}
+.totals-unpaid{color:#f59e0b}
+.row{display:flex;gap:18px;align-items:flex-start;flex-direction:column}
+@media(min-width:1024px){.row{flex-direction:row}}
+.row>aside{width:100%}
+@media(min-width:1024px){.row>aside{width:300px;flex-shrink:0}}
+.row>main{flex:1;min-width:0;width:100%}
+.month-nav{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.item{border:1px solid var(--border-dark);border-radius:12px;padding:11px 13px;display:flex;gap:10px;align-items:center;transition:.2s;background:var(--card);position:relative;overflow:hidden}
+html.light.item{border-color:var(--border)}
+.item.overdue{border:1px solid rgba(239,68,68,0.6);border-left:4px solid #ef4444;background:rgba(60,12,12,0.5)}
+html.light.item.overdue{background:rgba(254,226,226,0.75);border-color:rgba(239,68,68,0.4);border-left-color:#ef4444}
+.item.duesoon{border:1px solid rgba(251,191,36,0.5);border-left:4px solid #fbbf24;background:rgba(70,35,5,0.4)}
+html.light.item.duesoon{background:rgba(254,243,199,0.65);border-color:rgba(251,191,36,0.5);border-left-color:#f59e0b}
+.item.paid{opacity:.45}
+.circle{width:17px;height:17px;border-radius:50%;border:1.5px solid #4b5563;display:grid;place-items:center;flex-shrink:0;cursor:pointer;transition:.15s;color:transparent}
+html.light.circle{border-color:#d1d5db}
+.circle.checked{background:var(--text);border-color:var(--text);color:var(--bg);font-size:9px;font-weight:700}
+html.light.circle.checked{background:#111827;border-color:#111827;color:#fff}
+.icon-btn{width:30px;height:30px;border-radius:50%;border:1px solid var(--border-dark);background:transparent;display:grid;place-items:center;cursor:pointer;transition:.15s;color:var(--muted)}
+html.light.icon-btn{border-color:var(--border);color:#6b7280}
+.icon-btn:hover{background:var(--bg3);color:var(--text)}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal-backdrop.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border-dark);border-radius:16px;max-width:520px;width:100%;padding:18px;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+html.light.modal{border-color:var(--border)}
+.input{width:100%;max-width:100%;min-width:0;display:block;min-height:40px;padding:9px 11px;border:1px solid var(--border-dark);border-radius:10px;background:var(--bg2);color:var(--text);font-size:14px;transition:.15s;box-sizing:border-box}
+.input[type="date"]{min-width:0;max-width:100%;min-height:40px;height:40px;line-height:1.2;-webkit-appearance:none;appearance:none}
+html.light.input{border-color:var(--border)}
+label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:4px;display:block}
+.scope-opt{border:1px solid var(--border-dark);border-radius:12px;padding:11px;display:flex;gap:9px;cursor:pointer;margin-top:7px;background:var(--bg2)}
+html.light.scope-opt{border-color:var(--border)}
+.scope-opt.selected{border-color:#2563eb;background:#eff6ff}
+html:not(.light).scope-opt.selected{background:#1e2f4a;border-color:#3b82f6;color:#f1f5f9}
+.dot{width:15px;height:15px;border-radius:50%;border:1.5px solid var(--border-dark);display:grid;place-items:center;flex-shrink:0;margin-top:1px}
+.scope-opt.selected.dot{border-color:#2563eb}
+.scope-opt.selected.dot::after{content:'';width:6px;height:6px;background:#2563eb;border-radius:50%;display:block}
+.scope-title{font-weight:600;font-size:12px;color:var(--text)}
+.scope-desc{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.3}
+.cat-pill{padding:5px 10px;border-radius:9999px;border:1px solid var(--border-dark);font-size:11px;cursor:pointer;background:transparent;color:var(--muted);font-weight:400}
+html.light.cat-pill{border-color:var(--border)}
+.cat-pill.active{background:var(--text);color:var(--bg);border-color:var(--text);font-weight:500}
+html.light.cat-pill.active{background:#111827;color:#fff;border-color:#111827}
+.pie-legend{font-size:11px;display:flex;justify-content:space-between;padding:3px 0;align-items:center}
+.theme-btn{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--border-dark);background:var(--bg2);cursor:pointer;color:var(--muted)}
+html.light.theme-btn{border-color:var(--border)}
+footer a{color:var(--muted);text-decoration:underline;text-decoration-style:dotted;text-underline-offset:4px;text-decoration-color:rgba(156,163,175,0.5);font-weight:500}
+footer a:hover{color:var(--text);text-decoration-color:var(--text);text-decoration-style:solid}
+@media(max-width:1023px){.row{flex-direction:column!important}.row>main{order:1!important;width:100%!important}.row>aside{order:2!important;width:100%!important}.grid3{grid-template-columns:repeat(3,1fr)!important;gap:8px!important}.totals-value{font-size:15px!important}}
+@media(min-width:375px) and (max-width:639px){.totals-value{font-size:17px!important}}
+#prevBtn:disabled,#nextBtn:disabled{opacity:0.35;cursor:not-allowed}
+.faceid-overlay{position:fixed;inset:0;z-index:100;background:var(--bg);display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:24px;text-align:center}
+.faceid-overlay.open{display:flex}
+.faceid-icon{width:72px;height:72px;border-radius:50%;background:var(--bg2);border:1px solid var(--border-dark);display:grid;place-items:center;font-size:32px}
+html.light.faceid-icon{border-color:var(--border)}
+.hamburger-btn{display:none;width:36px;height:36px;border-radius:50%;border:1px solid var(--border-dark);background:var(--bg2);cursor:pointer;color:var(--text);font-size:18px;align-items:center;justify-content:center}
+html.light.hamburger-btn{border-color:var(--border)}
+.mobile-menu{display:none;position:absolute;top:100%;right:16px;z-index:40;width:260px;background:var(--card);border:1px solid var(--border-dark);border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,.4);padding:12px;flex-direction:column;gap:10px}
+html.light.mobile-menu{border-color:var(--border)}
+.mobile-menu.open{display:flex}
+.mobile-menu.menu-section{padding:10px;border:1px solid var(--border-dark);border-radius:12px;background:var(--bg2)}
+html.light.mobile-menu.menu-section{border-color:var(--border)}
+.hide-mobile{display:inline}.show-mobile{display:none}
+@media(max-width:767px){
+ .hamburger-btn{display:grid}
+  #syncBtn,#syncStatus{display:none!important}
+ .header-inner{position:relative}
+}
+@media(max-width:639px){
+ .hide-mobile{display:none}.show-mobile{display:inline}
+}
+@media(min-width:768px){
+ .mobile-menu{display:none!important}
+}
+@media (display-mode: standalone){.logo-link{pointer-events:none;cursor:default;} }
+.pwa.logo-link{pointer-events:none;cursor:default;}
+.type-toggle{display:flex;gap:8px;margin:0 auto 18px auto;background:var(--bg2);border:1px solid var(--border-dark);border-radius:9999px;padding:5px;width:fit-content;justify-content:center}
+html.light.type-toggle{border-color:var(--border)}
+.type-toggle button{border:none;background:transparent;color:var(--muted);padding:8px 22px;border-radius:9999px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;letter-spacing:0.01em}
+.type-toggle button.active{background:var(--text);color:var(--bg)}
+html.light.type-toggle button.active{background:#111827;color:#fff}
+.type-toggle button.income.active{background:#10b981;color:#fff}
+.type-toggle button.expense.active{background:#ef4444;color:#fff}
+html.light.type-toggle button.income.active{background:#059669}
+html.light.type-toggle button.expense.active{background:#dc2626}
+.total-first{text-align:left}
+@media(max-width:639px){
+  #totalsGrid{grid-template-columns:1fr 1fr!important; gap:18px!important}
+  #totalsGrid.card:first-child{grid-column:1 / -1}
+ .total-first{text-align:center}
+ .total-first.totals-value{text-align:center}
+}
+#totalsGrid{ gap:18px; margin-bottom:18px!important }
+.modal.input[type="date"]{
+  background-image:url("data:image/svg+xml,[STRIPPED])!important;
+  background-repeat:no-repeat!important;
+  background-position:right 14px center!important;
+  background-size:16px 16px!important;
+  padding-right:42px!important;
+  position:relative;
+}
+.modal.input[type="date"]::-webkit-calendar-picker-indicator{
+  position:absolute;right:0;top:0;width:42px;height:100%;opacity:0!important;cursor:pointer;margin:0;
+}
+html.light.modal.input[type="date"]{
+  background-image:url("data:image/svg+xml,[STRIPPED])!important;
+}
+.modal select.input{
+  padding-right:42px!important;
+  appearance:none!important;
+  -webkit-appearance:none!important;
+  -moz-appearance:none!important;
+  background-image:url("data:image/svg+xml,[STRIPPED]);
+  background-repeat:no-repeat;
+  background-position:right 14px center;
+  background-size:16px 16px;
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="container"><div class="header-inner">
+    <div class="logo-block">
+      <div class="logo-row">
+        <a class="logo-link" href="/"><img class="logo-img" src="./logo.png" alt="Pips & Co"></a>
+        <div class="logo-divider"></div><span class="logo-suffix">Budget Tracker</span>
+      </div>
+      <div class="subtitle">Track your monthly income & expenses with recurring templates</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button id="syncBtn" class="btn btn-ghost">Sync</button><span id="syncStatus" style="font-size:10px;color:var(--muted)"></span>
+      <button id="themeBtn" class="theme-btn">◐</button>
+      <button id="hamburgerBtn" class="hamburger-btn">☰</button>
+      <button id="addBtn" class="btn btn-primary hide-mobile">+ Add</button>
+    </div>
+  </div></div>
+  <div id="mobileMenu" class="mobile-menu"></div>
+</header>
+
+<div class="container" style="padding-top:18px;padding-bottom:24px">
+  <div id="totalsGrid" class="grid3" style="margin-bottom:18px"></div>
+  <div class="type-toggle" id="typeToggle">
+    <button data-type="expense" class="expense active">Expenses</button>
+    <button data-type="income" class="income">Income</button>
+  </div>
+  <div class="row">
+    <main>
+      <div class="card" style="margin-bottom:12px">
+        <div class="month-nav">
+          <button id="prevBtn" class="icon-btn">‹</button>
+          <div id="monthLabel" style="font-weight:600;font-size:14px"></div>
+          <button id="nextBtn" class="icon-btn">›</button>
+        </div>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div class="pill" id="listTitle" style="margin:0"></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap" id="catFilters"></div>
+        </div>
+        <div id="expenseList" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div id="emptyState" style="display:none;text-align:center;padding:24px;color:var(--muted);font-size:13px">No entries this month</div>
+      </div>
+    </main>
+    <aside>
+      <div class="card" style="margin-bottom:12px"><div class="pill">Breakdown</div><canvas id="pie" width="260" height="260" style="width:100%;height:auto"></canvas><div id="pieLegend" style="margin-top:10px"></div></div>
+      <div class="card"><div class="pill">Categories</div><div id="categoryTotals"></div></div>
+    </aside>
+  </div>
+</div>
+
+<div id="formModal" class="modal-backdrop"><div class="modal">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><h3 id="formTitle" style="margin:0;font-size:16px">Add Entry</h3><button id="closeForm" class="icon-btn">✕</button></div>
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div><label>Type</label><select id="fType" class="input"><option value="expense">Expense</option><option value="income">Income</option></select></div>
+    <div><label>Name</label><input id="fName" class="input" placeholder="e.g. Rent"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label>Amount</label><input id="fAmount" type="number" class="input" placeholder="0"></div>
+      <div><label>Category</label><select id="fCategory" class="input"></select></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label>Due Date (optional)</label><input id="fDue" type="date" class="input"></div>
+      <div><label>Recurrence</label><select id="fRecur" class="input"><option value="none">None</option><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="biweekly">Biweekly</option><option value="yearly">Yearly</option></select></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:6px"><button id="saveBtn" class="btn btn-primary" style="flex:1">Save</button><button id="cancelBtn" class="btn btn-ghost" style="flex:1">Cancel</button></div>
+    <div id="editScopeBox" style="display:none;border-top:1px solid var(--border-dark);padding-top:12px;margin-top:4px">
+      <label>Edit scope (recurring)</label>
+      <div class="scope-opt selected" data-scope="single"><div class="dot"></div><div><div class="scope-title">This entry only</div><div class="scope-desc">Only this month's occurrence</div></div></div>
+      <div class="scope-opt" data-scope="forward"><div class="dot"></div><div><div class="scope-title">Current and going forward</div><div class="scope-desc">This and all future months</div></div></div>
+      <div class="scope-opt" data-scope="all"><div class="dot"></div><div><div class="scope-title">All occurrences</div><div class="scope-desc">Every past and future occurrence</div></div></div>
+    </div>
+  </div>
+</div></div>
+
+<div id="deleteModal" class="modal-backdrop"><div class="modal" style="max-width:420px">
+  <h3 style="margin:0 0 10px 0;font-size:15px">Delete recurring entry?</h3>
+  <div style="display:flex;flex-direction:column">
+    <div class="scope-opt selected" data-del-scope="single"><div class="dot"></div><div><div class="scope-title">This entry only</div><div class="scope-desc">Delete only this month</div></div></div>
+    <div class="scope-opt" data-del-scope="forward"><div class="dot"></div><div><div class="scope-title">Current and going forward</div><div class="scope-desc">Delete this and all future months, keep previous</div></div></div>
+    <div class="scope-opt" data-del-scope="all"><div class="dot"></div><div><div class="scope-title">All occurrences</div><div class="scope-desc">Delete every occurrence</div></div></div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:14px"><button id="confirmDeleteBtn" class="btn btn-primary" style="flex:1;background:#ef4444;border-color:#ef4444">Delete</button><button id="cancelDeleteBtn" class="btn btn-ghost" style="flex:1">Cancel</button></div>
+</div></div>
+
+<script>
+const CATEGORIES_EXPENSE = ["Housing","Transport","Food","Utilities","Insurance","Health","Personal","Entertainment","Debt","Savings","Other"];
+const CATEGORIES_INCOME = ["Salary","Freelance","Investment","Other Income"];
+const LS_KEY="pips_budget_v4";
+
+let expenseTemplates=[],incomeTemplates=[],expensePayments=[],incomePayments=[];
+let activeMonth = new Date().toISOString().slice(0,7);
+let activeType='expense';
+let activeCat='All';
+let editId=null,editType=null,editOcc=null;
+let pendingDeleteId=null,pendingDeleteType=null,pendingDeleteOccurrence=null;
+let pendingDeleteScope='single';
+
+function uid(){return Math.random().toString(36).slice(2,9)}
+function parseD(s){ if(!s) return null; let [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function parseM(s){ let [y,m]=s.split('-').map(Number); return {y,m}; }
+function addM(s,delta){ let {y,m}=parseM(s); m+=delta; while(m>12){m-=12;y++;} while(m<1){m+=12;y--;} return y+'-'+String(m).padStart(2,'0'); }
+function fmtMoney(n){ return '$'+Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function save(){ localStorage.setItem(LS_KEY, JSON.stringify({expenseTemplates,incomeTemplates,expensePayments,incomePayments})); }
+function load(){ try{ let d=JSON.parse(localStorage.getItem(LS_KEY)||'{}'); expenseTemplates=d.expenseTemplates||[]; incomeTemplates=d.incomeTemplates||[]; expensePayments=d.expensePayments||[]; incomePayments=d.incomePayments||[]; }catch(e){} }
+
+function getDue(tpl,mStr){
+  // FIX: respect forward-delete truncation
+  if(tpl.deletedFromMonth && mStr >= tpl.deletedFromMonth) return null;
+  if(!tpl.dueDate) return null;
+  let due=parseD(tpl.dueDate);
+  if(!due) return null;
+  let {y:ty,m:tm,d:td}= {y:due.getFullYear(), m:due.getMonth()+1, d:due.getDate()};
+  let {y,m}=parseM(mStr);
+  let rec=tpl.recurrence||'none';
+  if(rec==='none'){
+    if(ty===y && tm===m) return [new Date(y,m-1,td)];
+    return null;
+  }
+  if(rec==='monthly'){
+    // if created after this month, don't show
+    let createdM = tpl.createdAt? tpl.createdAt.slice(0,7) : null;
+    if(createdM && createdM> mStr) return null;
+    if(ty>y || (ty===y && tm>m)) return null;
+    // handle month length
+    let last = new Date(y,m,0).getDate();
+    let day = Math.min(td,last);
+    return [new Date(y,m-1,day)];
+  }
+  if(rec==='yearly'){
+    if(tm!==m) return null;
+    let createdM = tpl.createdAt? tpl.createdAt.slice(0,7) : null;
+    if(createdM && createdM> mStr) return null;
+    if(ty>y) return null;
+    let last = new Date(y,m,0).getDate();
+    let day = Math.min(td,last);
+    return [new Date(y,m-1,day)];
+  }
+  if(rec==='weekly' || rec==='biweekly'){
+    let createdM = tpl.createdAt? tpl.createdAt.slice(0,7) : null;
+    if(createdM && createdM> mStr) return null;
+    let start = new Date(ty,tm-1,td);
+    let curMonthStart = new Date(y,m-1,1);
+    let curMonthEnd = new Date(y,m,0);
+    if(start > curMonthEnd) return null;
+    let step = rec==='weekly'?7:14;
+    let res=[];
+    let d = new Date(start);
+    while(d < curMonthStart){
+      d.setDate(d.getDate()+step);
+    }
+    while(d <= curMonthEnd){
+      res.push(new Date(d));
+      d.setDate(d.getDate()+step);
+    }
+    return res.length?res:null;
+  }
+  return null;
+}
+
+function computeMonthData(){
+  let filteredExpense=[],filteredIncome=[];
+  let allTemplates = activeType==='expense'? expenseTemplates : incomeTemplates;
+  let allPayments = activeType==='expense'? expensePayments : incomePayments;
+
+  allTemplates.forEach(t=>{
+    try{
+      if(t.deletedFromMonth && activeMonth >= t.deletedFromMonth) return; // FIX for no-due items
+      if(!t.dueDate){
+        let createdM = t.createdAt? t.createdAt.slice(0,7) : null;
+        if(createdM && createdM > activeMonth) return;
+        // check deleted marker
+        let del = allPayments.find(p=>p.templateId===t.id && p.month===activeMonth && p.deleted && p.occurrenceIndex===undefined);
+        if(del) return;
+        // check paid etc
+        let pay = allPayments.find(p=>p.templateId===t.id && p.month===activeMonth && p.occurrenceIndex===undefined);
+        filteredExpense.push?.(0); // placeholder to keep structure, will handle below
+        // push generic
+        if(activeType==='expense'){
+          if(allTemplates===expenseTemplates) filteredExpense.push({tpl:t, pay, due:null, occ:null});
+        } else {
+          filteredIncome.push({tpl:t, pay, due:null, occ:null});
+        }
+        return;
+      }
+      let dues = getDue(t, activeMonth);
+      if(!dues) return;
+      dues.forEach((due, idx)=>{
+        let occurrenceIndex = dues.length>1? idx : (t.recurrence==='weekly'||t.recurrence==='biweekly'? idx : null);
+        let del = allPayments.find(p=>p.templateId===t.id && p.month===activeMonth && p.deleted && (occurrenceIndex!==null? p.occurrenceIndex===occurrenceIndex : true) && (occurrenceIndex!==null || p.occurrenceIndex===undefined));
+        if(del) return;
+        let pay = allPayments.find(p=>p.templateId===t.id && p.month===activeMonth && (occurrenceIndex!==null? p.occurrenceIndex===occurrenceIndex : p.occurrenceIndex===undefined));
+        let entry = {tpl:t, pay, due, occ:occurrenceIndex};
+        if(activeType==='expense' && allTemplates===expenseTemplates) filteredExpense.push(entry);
+        if(activeType==='income' && allTemplates===incomeTemplates) filteredIncome.push(entry);
+      });
+    }catch(e){ console.error(e); }
+  });
+
+  // also need to compute both types for totals regardless of activeType
+  let expEntries=[],incEntries=[];
+  expenseTemplates.forEach(t=>{
+    if(t.deletedFromMonth && activeMonth >= t.deletedFromMonth) return;
+    if(!t.dueDate){
+      let createdM = t.createdAt? t.createdAt.slice(0,7) : null;
+      if(createdM && createdM > activeMonth) return;
+      let del = expensePayments.find(p=>p.templateId===t.id && p.month===activeMonth && p.deleted && p.occurrenceIndex===undefined);
+      if(del) return;
+      let pay = expensePayments.find(p=>p.templateId===t.id && p.month===activeMonth && p.occurrenceIndex===undefined);
+      expEntries.push({tpl:t,pay,due:null,occ:null});
+      return;
+    }
+    let dues=getDue(t,activeMonth); if(!dues) return;
+    dues.forEach((due,idx)=>{
+      let occ = dues.length>1? idx : null;
+      let del = expensePayments.find(p=>p.templateId===t.id && p.month===activeMonth && p.deleted && (occ!==null? p.occurrenceIndex===occ : true) && (occ!==null || p.occurrenceIndex===undefined));
+      if(del) return;
+      let pay = expensePayments.find(p=>p.templateId===t.id && p.month===activeMonth && (occ!==null? p.occurrenceIndex===occ : p.occurrenceIndex===undefined));
+      expEntries.push({tpl:t,pay,due,occ});
+    });
+  });
+  incomeTemplates.forEach(t=>{
+    if(t.deletedFromMonth && activeMonth >= t.deletedFromMonth) return;
+    if(!t.dueDate){
+      let createdM = t.createdAt? t.createdAt.slice(0,7) : null;
+      if(createdM && createdM > activeMonth) return;
+      let del = incomePayments.find(p=>p.templateId===t.id && p.month===activeMonth && p.deleted && p.occurrenceIndex===undefined);
+      if(del) return;
+      let pay = incomePayments.find(p=>p.templateId===t.id && p.month===activeMonth && p.occurrenceIndex===undefined);
+      incEntries.push({tpl:t,pay,due:null,occ:null});
+      return;
+    }
+    let dues=getDue(t,activeMonth); if(!dues) return;
+    dues.forEach((due,idx)=>{
+      let occ = dues.length>1? idx : null;
+      let del = incomePayments.find(p=>p.templateId===t.id && p.month===activeMonth && p.deleted && (occ!==null? p.occurrenceIndex===occ : true) && (occ!==null || p.occurrenceIndex===undefined));
+      if(del) return;
+      let pay = incomePayments.find(p=>p.templateId===t.id && p.month===activeMonth && (occ!==null? p.occurrenceIndex===occ : p.occurrenceIndex===undefined));
+      incEntries.push({tpl:t,pay,due,occ});
+    });
+  });
+
+  let activeEntries = activeType==='expense'? expEntries : incEntries;
+  return {activeEntries, expEntries, incEntries};
+}
+
+function render(){
+  let {activeEntries, expEntries, incEntries} = computeMonthData();
+  document.getElementById('monthLabel').textContent = new Date(parseM(activeMonth).y, parseM(activeMonth).m-1, 1).toLocaleString(undefined,{month:'long', year:'numeric'});
+  document.getElementById('listTitle').textContent = activeType==='expense'? 'Expenses - '+activeEntries.length : 'Income - '+activeEntries.length;
+
+  // totals
+  let expPaid=0,expUnpaid=0,incRec=0,incPend=0;
+  expEntries.forEach(e=>{ let amt = e.pay?.amount?? e.tpl.amount; if(e.pay?.paid) expPaid+=Number(amt); else expUnpaid+=Number(amt); });
+  incEntries.forEach(e=>{ let amt = e.pay?.amount?? e.tpl.amount; if(e.pay?.paid) incRec+=Number(amt); else incPend+=Number(amt); });
+  let totalBalance = incRec - expPaid;
+  let totalsGrid = document.getElementById('totalsGrid');
+  totalsGrid.innerHTML = `
+    <div class="card total-first"><div class="totals-label">Balance (paid)</div><div class="totals-value">${fmtMoney(totalBalance)}</div></div>
+    <div class="card"><div class="totals-label">Paid</div><div class="totals-value totals-paid">${fmtMoney(expPaid)}</div><div class="totals-label" style="margin-top:6px">Unpaid: ${fmtMoney(expUnpaid)}</div></div>
+    <div class="card"><div class="totals-label">Received</div><div class="totals-value" style="color:#10b981">${fmtMoney(incRec)}</div><div class="totals-label" style="margin-top:6px">Pending: ${fmtMoney(incPend)}</div></div>
+  `;
+
+  // cat filters
+  let cats = activeType==='expense'? CATEGORIES_EXPENSE : CATEGORIES_INCOME;
+  let catFiltersEl = document.getElementById('catFilters');
+  catFiltersEl.innerHTML = `<button class="cat-pill ${activeCat==='All'?'active':''}" data-cat="All">All</button>` + cats.map(c=>`<button class="cat-pill ${activeCat===c?'active':''}" data-cat="${c}">${c}</button>`).join('');
+  catFiltersEl.querySelectorAll('.cat-pill').forEach(b=> b.addEventListener('click',()=>{ activeCat=b.dataset.cat; render(); }));
+
+  // filter by cat
+  let list = activeEntries;
+  if(activeCat!=='All') list = list.filter(e=> (e.pay?.snapshotCategory || e.tpl.category)===activeCat);
+
+  let listEl = document.getElementById('expenseList');
+  let emptyEl = document.getElementById('emptyState');
+  listEl.innerHTML='';
+  if(!list.length){ emptyEl.style.display='block'; }
+  else {
+    emptyEl.style.display='none';
+    list.forEach(entry=>{
+      let tpl=entry.tpl, pay=entry.pay;
+      let amount = pay?.amount?? tpl.amount;
+      let name = pay?.snapshotName || tpl.name;
+      let cat = pay?.snapshotCategory || tpl.category;
+      let paid =!!pay?.paid;
+      let due = entry.due;
+      let occ = entry.occ;
+      let div = document.createElement('div');
+      let overdue=false, duesoon=false;
+      if(due &&!paid){
+        let today=new Date(); today.setHours(0,0,0,0);
+        let d=new Date(due); d.setHours(0,0,0,0);
+        let diff = (d - today)/(1000*60*60*24);
+        if(diff<0) overdue=true; else if(diff<=3) duesoon=true;
+      }
+      div.className='item'+(paid?' paid':'')+(overdue?' overdue':'')+(duesoon?' duesoon':'');
+      div.innerHTML=`
+        <div class="circle ${paid?'checked':''}" data-act="toggle">${paid?'✓':''}</div>
+        <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name} ${occ!==null?'<span style="font-size:10px;color:var(--muted)">#'+(occ+1)+'</span>':''}</div><div style="font-size:11px;color:var(--muted)">${cat}${due?' • '+due.toLocaleDateString():''}</div></div>
+        <div style="font-weight:600;font-size:13px">${fmtMoney(amount)}</div>
+        <button class="icon-btn" data-act="edit">✎</button>
+        <button class="icon-btn" data-act="del">🗑</button>
+      `;
+      div.querySelector('[data-act="toggle"]').addEventListener('click',()=>{ togglePaid(tpl.id, occ); });
+      div.querySelector('[data-act="edit"]').addEventListener('click',()=>{ openEdit(tpl.id, occ); });
+      div.querySelector('[data-act="del"]').addEventListener('click',()=>{ openDelete(tpl.id, occ); });
+      listEl.appendChild(div);
+    });
+  }
+  // category totals & pie
+  renderCategoryTotals(activeType==='expense'? expEntries : incEntries);
+}
+
+function renderCategoryTotals(entries){
+  let map={};
+  entries.forEach(e=>{ let cat=e.pay?.snapshotCategory||e.tpl.category; let amt=e.pay?.amount?? e.tpl.amount; map[cat]=(map[cat]||0)+Number(amt); });
+  let ctEl=document.getElementById('categoryTotals'); ctEl.innerHTML='';
+  Object.entries(map).sort((a,b)=>b[1]-a[1]).forEach(([cat,amt])=>{ let d=document.createElement('div'); d.className='pie-legend'; d.innerHTML=`<span>${cat}</span><span>${fmtMoney(amt)}</span>`; ctEl.appendChild(d); });
+  let canvas=document.getElementById('pie'); let ctx=canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);
+  let total=Object.values(map).reduce((a,b)=>a+b,0); let colors=['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16']; let start=0;
+  let i=0; Object.values(map).forEach(val=>{ let ang=(val/total)*Math.PI*2; ctx.beginPath(); ctx.moveTo(130,130); ctx.fillStyle=colors[i%colors.length]; ctx.arc(130,130,110,start,start+ang); ctx.closePath(); ctx.fill(); start+=ang; i++; });
+  let legend=document.getElementById('pieLegend'); legend.innerHTML=Object.entries(map).map(([c,a],idx)=>`<div class="pie-legend"><span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${colors[idx%colors.length]};margin-right:6px"></span>${c}</span><span>${fmtMoney(a)}</span></div>`).join('');
+}
+
+function togglePaid(id, occ){
+  let type=activeType;
+  let payments = type==='expense'? expensePayments : incomePayments;
+  let idx = payments.findIndex(p=>p.templateId===id && p.month===activeMonth && (occ!==null? p.occurrenceIndex===occ : p.occurrenceIndex===undefined));
+  if(idx>=0){
+    payments[idx].paid=!payments[idx].paid;
+  } else {
+    let tpl = (type==='expense'? expenseTemplates : incomeTemplates).find(t=>t.id===id);
+    payments.push({id:uid(), templateId:id, month:activeMonth, occurrenceIndex: occ!==null? occ: undefined, paid:true, amount: tpl.amount, snapshotName: tpl.name, snapshotCategory: tpl.category});
+  }
+  save(); render();
+}
+
+function openEdit(id, occ){
+  editId=id; editType=activeType; editOcc=occ;
+  let tpl = (activeType==='expense'? expenseTemplates : incomeTemplates).find(t=>t.id===id);
+  let pay = (activeType==='expense'? expensePayments : incomePayments).find(p=>p.templateId===id && p.month===activeMonth && (occ!==null? p.occurrenceIndex===occ : p.occurrenceIndex===undefined));
+  document.getElementById('fName').value = pay?.snapshotName || tpl.name;
+  document.getElementById('fAmount').value = pay?.amount?? tpl.amount;
+  document.getElementById('fCategory').value = pay?.snapshotCategory || tpl.category;
+  document.getElementById('fDue').value = tpl.dueDate||'';
+  document.getElementById('fRecur').value = tpl.recurrence||'none';
+  document.getElementById('fType').value = activeType;
+  document.getElementById('formTitle').textContent='Edit Entry';
+  if(tpl.recurrence && tpl.recurrence!=='none'){ document.getElementById('editScopeBox').style.display='block'; } else { document.getElementById('editScopeBox').style.display='none'; }
+  updateCategoryOptions();
+  document.getElementById('fCategory').value = pay?.snapshotCategory || tpl.category;
+  document.getElementById('formModal').classList.add('open');
+}
+
+function openDelete(id, occ){
+  pendingDeleteId=id; pendingDeleteType=activeType; pendingDeleteOccurrence=occ;
+  let tpl = (activeType==='expense'? expenseTemplates : incomeTemplates).find(t=>t.id===id);
+  let isRec = tpl && tpl.recurrence && tpl.recurrence!=='none';
+  document.querySelectorAll('#deleteModal.scope-opt').forEach(o=>{
+    if(o.dataset.delScope!=='single' &&!isRec) o.style.display='none'; else o.style.display='flex';
+  });
+  document.getElementById('deleteModal').classList.add('open');
+}
+
+function updateCategoryOptions(){
+  let type=document.getElementById('fType').value;
+  let cats = type==='expense'? CATEGORIES_EXPENSE : CATEGORIES_INCOME;
+  let sel=document.getElementById('fCategory'); sel.innerHTML=cats.map(c=>`<option>${c}</option>`).join('');
+}
+
+function commitSave(){
+  let name=document.getElementById('fName').value.trim();
+  let amount=Number(document.getElementById('fAmount').value||0);
+  let category=document.getElementById('fCategory').value;
+  let dueDate=document.getElementById('fDue').value||null;
+  let recurrence=document.getElementById('fRecur').value;
+  let type=document.getElementById('fType').value;
+  if(!name) return alert('Name required');
+
+  let scope='single';
+  let selScope = document.querySelector('#editScopeBox.scope-opt.selected');
+  if(selScope) scope=selScope.dataset.scope;
+
+  if(!editId){
+    let tpl={id:uid(), name, amount, category, dueDate, recurrence, createdAt: new Date().toISOString().slice(0,10), deletedFromMonth:null};
+    if(type==='expense') expenseTemplates.push(tpl); else incomeTemplates.push(tpl);
+  } else {
+    let templates = editType==='expense'? expenseTemplates : incomeTemplates;
+    let payments = editType==='expense'? expensePayments : incomePayments;
+    let tpl = templates.find(t=>t.id===editId);
+    if(!tpl) return;
+    if(!tpl.recurrence || tpl.recurrence==='none' || scope==='all'){
+      tpl.name=name; tpl.amount=amount; tpl.category=category; tpl.dueDate=dueDate; tpl.recurrence=recurrence;
+      payments.forEach(p=>{ if(p.templateId===editId){ p.amount=amount; p.snapshotName=name; p.snapshotCategory=category; }});
+    } else if(scope==='single'){
+      let existingIdx = payments.findIndex(p=>p.templateId===editId && p.month===activeMonth && (editOcc!==null? p.occurrenceIndex===editOcc : p.occurrenceIndex===undefined));
+      if(existingIdx>=0){
+        payments[existingIdx].amount=amount; payments[existingIdx].snapshotName=name; payments[existingIdx].snapshotCategory=category;
+      } else {
+        payments.push({id:uid(), templateId:editId, month:activeMonth, occurrenceIndex: editOcc!==null? editOcc: undefined, amount, snapshotName:name, snapshotCategory:category, paid:false});
+      }
+    } else if(scope==='forward'){
+      tpl.name=name; tpl.category=category; tpl.amount=amount; tpl.dueDate=dueDate; tpl.recurrence=recurrence;
+      payments = payments.map(p=>{ if(p.templateId!==editId && p.month>=activeMonth){ return p; } if(p.templateId===editId && p.month>=activeMonth){ return {...p, amount, snapshotName:name, snapshotCategory:category}; } return p; });
+      if(editType==='expense') expensePayments=payments; else incomePayments=payments;
+    }
+  }
+  editId=null; editOcc=null; save(); render(); closeModals();
+}
+
+function commitDelete(scope){
+  if(!pendingDeleteId) return;
+  let id=pendingDeleteId; let type=pendingDeleteType; let occ=pendingDeleteOccurrence;
+
+  if(type==='expense'){
+    if(scope==='single'){
+      if(occ!==null){
+        expensePayments.push({id:uid(),templateId:id,month:activeMonth,occurrenceIndex:occ,deleted:true,paid:false,amount:0});
+      } else {
+        expensePayments.push({id:uid(),templateId:id,month:activeMonth,deleted:true,paid:false,amount:0});
+      }
+    } else if(scope==='forward'){
+      // FIX: keep previous entries, delete current and future only
+      if(occ!==null){
+        // keep payments < activeMonth and occurrences < occ in current month
+        expensePayments = expensePayments.filter(p=>{
+          if(p.templateId!==id) return true;
+          if(p.month < activeMonth) return true;
+          if(p.month===activeMonth && p.occurrenceIndex!==undefined && p.occurrenceIndex < occ) return true;
+          return false;
+        });
+        let tpl = expenseTemplates.find(t=>t.id===id);
+        if(tpl){
+          let dues = getDue({...tpl, deletedFromMonth:null}, activeMonth) || [];
+          for(let i=occ;i<dues.length;i++){
+            expensePayments.push({id:uid(),templateId:id,month:activeMonth,occurrenceIndex:i,deleted:true,paid:false,amount:0});
+          }
+        }
+        expenseTemplates = expenseTemplates.map(t=> t.id===id? {...t, deletedFromMonth: addM(activeMonth,1)} : t);
+      } else {
+        expensePayments = expensePayments.filter(p=>!(p.templateId===id && p.month >= activeMonth));
+        expenseTemplates = expenseTemplates.map(t=> t.id===id? {...t, deletedFromMonth: activeMonth} : t);
+      }
+    } else { // all
+      expenseTemplates=expenseTemplates.filter(x=>x.id!==id);
+      expensePayments=expensePayments.filter(p=>p.templateId!==id);
+    }
+  } else { // income
+    if(scope==='single'){
+      if(occ!==null){
+        incomePayments.push({id:uid(),templateId:id,month:activeMonth,occurrenceIndex:occ,deleted:true,paid:false,amount:0});
+      } else {
+        incomePayments.push({id:uid(),templateId:id,month:activeMonth,deleted:true,paid:false,amount:0});
+      }
+    } else if(scope==='forward'){
+      if(occ!==null){
+        incomePayments = incomePayments.filter(p=>{
+          if(p.templateId!==id) return true;
+          if(p.month < activeMonth) return true;
+          if(p.month===activeMonth && p.occurrenceIndex!==undefined && p.occurrenceIndex < occ) return true;
+          return false;
+        });
+        let tpl = incomeTemplates.find(t=>t.id===id);
+        if(tpl){
+          let dues = getDue({...tpl, deletedFromMonth:null}, activeMonth) || [];
+          for(let i=occ;i<dues.length;i++){
+            incomePayments.push({id:uid(),templateId:id,month:activeMonth,occurrenceIndex:i,deleted:true,paid:false,amount:0});
+          }
+        }
+        incomeTemplates = incomeTemplates.map(t=> t.id===id? {...t, deletedFromMonth: addM(activeMonth,1)} : t);
+      } else {
+        incomePayments = incomePayments.filter(p=>!(p.templateId===id && p.month >= activeMonth));
+        incomeTemplates = incomeTemplates.map(t=> t.id===id? {...t, deletedFromMonth: activeMonth} : t);
+      }
+    } else {
+      incomeTemplates=incomeTemplates.filter(x=>x.id!==id);
+      incomePayments=incomePayments.filter(p=>p.templateId!==id);
+    }
+  }
+  pendingDeleteId=null; pendingDeleteOccurrence=null; pendingDeleteType=null;
+  save(); render(); closeModals();
+}
+
+function closeModals(){ document.getElementById('formModal').classList.remove('open'); document.getElementById('deleteModal').classList.remove('open'); editId=null; }
+
+document.getElementById('addBtn').addEventListener('click',()=>{
+  editId=null; editOcc=null; document.getElementById('formTitle').textContent='Add Entry';
+  document.getElementById('fName').value=''; document.getElementById('fAmount').value=''; document.getElementById('fDue').value=''; document.getElementById('fRecur').value='none';
+  updateCategoryOptions(); document.getElementById('editScopeBox').style.display='none';
+  document.getElementById('formModal').classList.add('open');
+});
+document.getElementById('closeForm').addEventListener('click',closeModals);
+document.getElementById('cancelBtn').addEventListener('click',closeModals);
+document.getElementById('saveBtn').addEventListener('click',commitSave);
+document.getElementById('fType').addEventListener('change',updateCategoryOptions);
+document.getElementById('prevBtn').addEventListener('click',()=>{ activeMonth=addM(activeMonth,-1); render(); });
+document.getElementById('nextBtn').addEventListener('click',()=>{ activeMonth=addM(activeMonth,1); render(); });
+document.getElementById('typeToggle').addEventListener('click',e=>{
+  if(e.target.dataset.type){ activeType=e.target.dataset.type; document.querySelectorAll('#typeToggle button').forEach(b=>b.classList.remove('active')); e.target.classList.add('active'); activeCat='All'; render(); }
+});
+document.querySelectorAll('#editScopeBox.scope-opt').forEach(o=>{ o.addEventListener('click',()=>{ document.querySelectorAll('#editScopeBox.scope-opt').forEach(x=>x.classList.remove('selected')); o.classList.add('selected'); }); });
+document.querySelectorAll('#deleteModal.scope-opt').forEach(o=>{ o.addEventListener('click',()=>{ document.querySelectorAll('#deleteModal.scope-opt').forEach(x=>x.classList.remove('selected')); o.classList.add('selected'); pendingDeleteScope=o.dataset.delScope; }); });
+document.getElementById('confirmDeleteBtn').addEventListener('click',()=>{ commitDelete(pendingDeleteScope); });
+document.getElementById('cancelDeleteBtn').addEventListener('click',closeModals);
+document.getElementById('themeBtn').addEventListener('click',()=>{ document.documentElement.classList.toggle('light'); localStorage.setItem('theme', document.documentElement.classList.contains('light')?'light':'dark'); });
+if(localStorage.getItem('theme')==='light') document.documentElement.classList.add('light');
+
+load(); updateCategoryOptions(); render();
+</script>
+</body>
+</html>
