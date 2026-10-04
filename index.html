@@ -169,7 +169,6 @@ html.light .type-toggle button.expense.active{background:#dc2626}
 <div class="logo-divider"></div>
 <span class="logo-suffix">Budget Tracker</span>
 </div>
-<div class="subtitle">A simple, powerful recurring budget tracker</div>
 </div>
 <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
 <button id="syncBtn" class="btn btn-ghost" style="font-size:11px">☁ Sign in</button>
@@ -211,7 +210,7 @@ html.light .type-toggle button.expense.active{background:#dc2626}
 </div>
 </div>
 
-<footer style="padding:18px 0;margin-top:18px;border-top:1px solid var(--border-dark)"><div class="container" style="text-align:center;font-size:11px;color:var(--muted)">Built with <span style="color:#ef4444">♥</span> by <a href="https://sitestars.net/" target="_blank">Sitestars</a></div></footer>
+<footer style="padding:18px 0;margin-top:18px;border-top:1px solid var(--border-dark)"><div class="container" style="text-align:center;font-size:11px;color:var(--muted)"><div style="font-style:italic;margin-bottom:6px">A simple, powerful recurring budget tracker</div>Built with <span style="color:#ef4444">♥</span> by <a href="https://sitestars.net/" target="_blank">Sitestars</a></div></footer>
 
 <div id="editBackdrop" class="modal-backdrop"><div class="modal"><h3 id="modalTitle" style="margin:0 0 3px 0;font-size:15px;font-weight:600">New Expense</h3><div style="display:grid;gap:10px"><div><label>Name</label><input id="f_name" class="input" placeholder="e.g. Rent, Groceries"></div>
 <div class="modal-row-top" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,0.9fr);gap:8px;min-width:0">
@@ -221,11 +220,14 @@ html.light .type-toggle button.expense.active{background:#dc2626}
   </div>
 </div>
 <div style="min-width:0"><label>Due date (optional)</label><input id="f_due" class="input" type="date"></div>
-</div><div><label>Recurrence</label><select id="f_rec" class="input"><option value="none">None</option><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="biweekly">Bi-Weekly</option><option value="yearly">Yearly</option><option value="quarterly">Quarterly</option><option value="semiannually">Semi-annually</option></select></div><div><label>Category</label><select id="f_cat" class="input"></select><div style="display:flex;gap:6px;margin-top:6px"><input id="f_newcat" class="input" placeholder="New category" style="flex:1"><button id="addCatBtn" class="btn btn-ghost">Add</button></div></div><div><label>Notes (optional)</label><input id="f_notes" class="input" placeholder="Optional notes"></div></div><div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="cancelEdit" class="btn btn-ghost">Cancel</button><button id="saveEdit" class="btn btn-primary">Save</button></div></div></div>
+</div>
+<div><label>Recurrence</label><select id="f_rec" class="input"><option value="none">None</option><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="biweekly">Bi-Weekly</option><option value="yearly">Yearly</option><option value="quarterly">Quarterly</option><option value="semiannually">Semi-annually</option></select></div><div><label>Category</label><select id="f_cat" class="input"></select><div style="display:flex;gap:6px;margin-top:6px"><input id="f_newcat" class="input" placeholder="New category" style="flex:1"><button id="addCatBtn" class="btn btn-ghost">Add</button></div></div><div><label>Notes (optional)</label><input id="f_notes" class="input" placeholder="Optional notes"></div>
+<div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="cancelEdit" class="btn btn-ghost">Cancel</button><button id="saveEdit" class="btn btn-primary">Save</button></div>
+</div></div></div>
 
-<div id="scopeBackdrop" class="modal-backdrop" style="z-index:60"><div class="modal" style="max-width:440px"><h3 style="margin:0 0 4px 0;font-size:15px;font-weight:600">Edit recurring</h3><div id="scopeDesc" style="font-size:11px;color:var(--muted)"></div><div style="margin-top:10px"><div class="scope-opt selected" data-scope="single"><div class="dot"></div><div><div class="scope-title">This single entry</div><div class="scope-desc">Only this month will be changed.</div></div></div><div class="scope-opt" data-scope="forward"><div class="dot"></div><div><div class="scope-title">Current entry going forward</div><div class="scope-desc">This and all future months will use the new values.</div></div></div><div class="scope-opt" data-scope="all"><div class="dot"></div><div><div class="scope-title">All entries</div><div class="scope-desc">Every occurrence in the series will be updated.</div></div></div></div><div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="scopeCancel" class="btn btn-ghost">Cancel</button><button id="scopeApply" class="btn btn-primary">Apply</button></div></div></div>
+<div id="scopeBackdrop" class="modal-backdrop" style="z-index:60"><div class="modal" style="max-width:440px"><h3 style="margin:0 0 4px 0;font-size:15px;font-weight:600">Edit recurring</h3><div id="scopeDesc" style="font-size:11px;color:var(--muted)"></div><div style="margin-top:10px"><div class="scope-opt selected" data-scope="single"><div class="dot"></div><div><div class="scope-title">This single entry</div><div class="scope-desc">Only this entry will be changed.</div></div></div><div class="scope-opt" data-scope="forward"><div class="dot"></div><div><div class="scope-title">Current entry going forward</div><div class="scope-desc">This and all future entries will use the new values.</div></div></div><div class="scope-opt" data-scope="all"><div class="dot"></div><div><div class="scope-title">All entries</div><div class="scope-desc">Every occurrence in the series will be updated.</div></div></div></div><div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="scopeCancel" class="btn btn-ghost">Cancel</button><button id="scopeApply" class="btn btn-primary">Apply</button></div></div></div>
 
-<div id="deleteScopeBackdrop" class="modal-backdrop" style="z-index:60"><div class="modal" style="max-width:440px"><h3 style="margin:0 0 4px 0;font-size:15px;font-weight:600">Delete recurring</h3><div id="deleteScopeDesc" style="font-size:11px;color:var(--muted)"></div><div style="margin-top:10px"><div class="scope-opt selected" data-scope="single"><div class="dot"></div><div><div class="scope-title">This single entry</div><div class="scope-desc">Only this month will be deleted.</div></div></div><div class="scope-opt" data-scope="forward"><div class="dot"></div><div><div class="scope-title">Current and going forward</div><div class="scope-desc">This and all future months will be deleted.</div></div></div><div class="scope-opt" data-scope="all"><div class="dot"></div><div><div class="scope-title">All entries</div><div class="scope-desc">Every occurrence in the series will be deleted.</div></div></div></div><div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="deleteScopeCancel" class="btn btn-ghost">Cancel</button><button id="deleteScopeApply" class="btn btn-primary" style="background:#ef4444;border-color:#ef4444">Delete</button></div></div></div>
+<div id="deleteScopeBackdrop" class="modal-backdrop" style="z-index:60"><div class="modal" style="max-width:440px"><h3 style="margin:0 0 4px 0;font-size:15px;font-weight:600">Delete recurring</h3><div id="deleteScopeDesc" style="font-size:11px;color:var(--muted)"></div><div style="margin-top:10px"><div class="scope-opt selected" data-scope="single"><div class="dot"></div><div><div class="scope-title">This single entry</div><div class="scope-desc">Only this entry will be deleted.</div></div></div><div class="scope-opt" data-scope="forward"><div class="dot"></div><div><div class="scope-title">Current and going forward</div><div class="scope-desc">This and all future entries will be deleted.</div></div></div><div class="scope-opt" data-scope="all"><div class="dot"></div><div><div class="scope-title">All entries</div><div class="scope-desc">Every occurrence in the series will be deleted.</div></div></div></div><div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="deleteScopeCancel" class="btn btn-ghost">Cancel</button><button id="deleteScopeApply" class="btn btn-primary" style="background:#ef4444;border-color:#ef4444">Delete</button></div></div></div>
 
 <script>
 const LOGO_DARK = "./logo-white.png";
@@ -506,7 +508,7 @@ function rowHtml({tpl,due,paid,amt,dueSoon,overdue,isOutstanding,currency}){
  let badgeSoonText = (typeof activeType!=='undefined' && activeType==='income') ? 'Arriving soon' : 'Due soon';
  let badges=`<span class="badge">${tpl.category}</span>`+(dueSoon?`<span class="badge badge-amber">${badgeSoonText}</span>`:"")+(overdue&&!paid?`<span class="badge badge-red">Overdue</span>`:"");
  let curSym = currency || tpl.currency || '$';
- return `<div class="${cls}"><div class="circle ${paid?"checked":""}" data-toggle="${tpl.id}">${paid?"✓":""}</div><div style="flex:1;min-width:0"><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap"><span style="font-weight:600;font-size:12px;${paid?"text-decoration:line-through;opacity:.7":""}">${tpl.name}</span>${badges}</div><div style="font-size:10px;color:var(--muted);display:flex;gap:4px;align-items:center;margin-top:2px">${iconCal()} ${dueLabel}</div></div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0"><span style="font-weight:600;font-size:12px;${paid?"text-decoration:line-through;opacity:.7":(isOutstanding?"color:#f59e0b":"")}">${curSym}${amt.toFixed(2)}</span><button class="icon-btn" data-edit="${tpl.id}">${iconPencil()}</button><button class="icon-btn" data-del="${tpl.id}">${iconTrash()}</button></div></div>`;
+ return `<div class="${cls}"><div class="circle ${paid?"checked":""}" data-toggle="${tpl.id}">${paid?"✓":""}</div><div style="flex:1;min-width:0"><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap"><span style="font-weight:600;font-size:12px;${paid?"text-decoration:line-through;opacity:.7":""}">${tpl.name}</span>${badges}</div><div style="font-size:10px;color:var(--muted);display:flex;gap:4px;align-items:center;margin-top:2px">${iconCal()} ${dueLabel}</div></div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0"><span style="font-weight:600;font-size:12px;${paid?"text-decoration:line-through;opacity:.7":(isOutstanding?"color:#f59e0b":"")}">${curSym}${amt.toFixed(2)}</span><button class="icon-btn" data-edit="${tpl.id}" data-occ="${typeof occurrenceIndex!=='undefined'?occurrenceIndex:''}">${iconPencil()}</button><button class="icon-btn" data-del="${tpl.id}" data-occ="${typeof occurrenceIndex!=='undefined'?occurrenceIndex:''}">${iconTrash()}</button></div></div>`;
 }
 
 function renderMain(){
@@ -544,9 +546,9 @@ function renderMain(){
  }
  html+=`</div>`;
  main.innerHTML=html;
- main.querySelectorAll("[data-toggle]").forEach(b=>{b.onclick=()=>{togglePaid(b.dataset.toggle)}});
- main.querySelectorAll("[data-edit]").forEach(b=>{b.onclick=()=>{openEdit(b.dataset.edit)}});
- main.querySelectorAll("[data-del]").forEach(b=>{b.onclick=()=>{deleteTpl(b.dataset.del)}});
+ main.querySelectorAll("[data-toggle]").forEach(b=>{b.onclick=()=>{togglePaid(b.dataset.toggle, b.dataset.occ)}});
+ main.querySelectorAll("[data-edit]").forEach(b=>{b.onclick=()=>{openEdit(b.dataset.edit, b.dataset.occ)}});
+ main.querySelectorAll("[data-del]").forEach(b=>{b.onclick=()=>{deleteTpl(b.dataset.del, b.dataset.occ)}});
 }
 
 function renderAll(){
@@ -597,11 +599,12 @@ function togglePaid(tid){
   save(); renderAll();
 }
 
-let pendingDeleteId=null, pendingDeleteType='expense', deleteScope='all';
-function deleteTpl(id){
+let pendingDeleteId=null, pendingDeleteType='expense', deleteScope='all', pendingDeleteOccurrence=null;
+function deleteTpl(id, occIdx){
   let templates = activeType==='expense'? expenseTemplates : incomeTemplates;
   let t=templates.find(x=>x.id===id);
   if(!t) return;
+  pendingDeleteOccurrence = (occIdx!==undefined && occIdx!=='' && occIdx!==null) ? parseInt(occIdx) : null;
   if(t.recurrence!=="none"){
     pendingDeleteId=id; pendingDeleteType=activeType; deleteScope='all';
     document.querySelectorAll("#deleteScopeBackdrop .scope-opt").forEach(o=>o.classList.toggle("selected", o.dataset.scope==="all"));
@@ -616,17 +619,29 @@ function deleteTpl(id){
 }
 function commitDelete(scope){
   if(!pendingDeleteId) return;
-  let id=pendingDeleteId; let type=pendingDeleteType;
+  let id=pendingDeleteId; let type=pendingDeleteType; let occ=pendingDeleteOccurrence;
   if(type==='expense'){
-    if(scope==="single"){ expensePayments.push({id:uid(),templateId:id,month:activeMonth,deleted:true,paid:false,amount:0}); }
+    if(scope==="single"){
+      if(occ!==null){
+        expensePayments.push({id:uid(),templateId:id,month:activeMonth,occurrenceIndex:occ,deleted:true,paid:false,amount:0});
+      } else {
+        expensePayments.push({id:uid(),templateId:id,month:activeMonth,deleted:true,paid:false,amount:0});
+      }
+    }
     else if(scope==="forward"){ let keep=expensePayments.filter(p=>p.templateId===id && p.month<activeMonth); expensePayments=expensePayments.filter(p=>p.templateId!==id); keep.forEach(p=>expensePayments.push(p)); expenseTemplates=expenseTemplates.filter(x=>x.id!==id); }
     else { expenseTemplates=expenseTemplates.filter(x=>x.id!==id); expensePayments=expensePayments.filter(p=>p.templateId!==id); }
   } else {
-    if(scope==="single"){ incomePayments.push({id:uid(),templateId:id,month:activeMonth,deleted:true,paid:false,amount:0}); }
+    if(scope==="single"){
+      if(occ!==null){
+        incomePayments.push({id:uid(),templateId:id,month:activeMonth,occurrenceIndex:occ,deleted:true,paid:false,amount:0});
+      } else {
+        incomePayments.push({id:uid(),templateId:id,month:activeMonth,deleted:true,paid:false,amount:0});
+      }
+    }
     else if(scope==="forward"){ let keep=incomePayments.filter(p=>p.templateId===id && p.month<activeMonth); incomePayments=incomePayments.filter(p=>p.templateId!==id); keep.forEach(p=>incomePayments.push(p)); incomeTemplates=incomeTemplates.filter(x=>x.id!==id); }
     else { incomeTemplates=incomeTemplates.filter(x=>x.id!==id); incomePayments=incomePayments.filter(p=>p.templateId!==id); }
   }
-  pendingDeleteId=null;
+  pendingDeleteId=null; pendingDeleteOccurrence=null;
 }
 
 function openNew(){
@@ -648,13 +663,19 @@ function openNew(){
   document.getElementById("editBackdrop").classList.add("open");
 }
 
-function openEdit(id){
+let editOccurrenceIndex = null;
+function openEdit(id, occIdx){
   let templates = activeType==='expense'? expenseTemplates : incomeTemplates;
   let payments = activeType==='expense'? expensePayments : incomePayments;
   let t=templates.find(x=>x.id===id); if(!t) return;
   editId=id;
+  editOccurrenceIndex = (occIdx!==undefined && occIdx!=='' && occIdx!==null) ? parseInt(occIdx) : null;
   editType=activeType;
-  let pay=payments.find(p=>p.templateId===id && p.month===activeMonth && !p.deleted);
+  let pay=null;
+  if(editOccurrenceIndex!==null){
+    pay=payments.find(p=>p.templateId===id && p.month===activeMonth && p.occurrenceIndex===editOccurrenceIndex && !p.deleted);
+  }
+  if(!pay) pay=payments.find(p=>p.templateId===id && p.month===activeMonth && !p.deleted);
   let nameVal = pay?.snapshotName || t.name;
   let amountVal = (pay && pay.amount!=null) ? pay.amount : t.amount;
   let dueVal = t.dueDate||"";
@@ -702,13 +723,22 @@ function commitSave(data,scope){
     else incomePayments=incomePayments.map(p=> p.templateId===editId? {...p,snapshotName:name,snapshotCategory:category,snapshotNotes:notes}:p);
   }
  } else if(scope==="single"){
+  // For bi-weekly/weekly with multiple occurrences, edit only specific occurrence
+  let occIdx = editOccurrenceIndex;
   let findFn = editType==='expense'? findPayExpense : findPayIncome;
-  let ex=findFn(editId,activeMonth);
+  let ex=null;
+  if(occIdx!==null){
+    let payments = editType==='expense'? expensePayments : incomePayments;
+    ex=payments.find(p=>p.templateId===editId && p.month===activeMonth && p.occurrenceIndex===occIdx && !p.deleted);
+  }
+  if(!ex){
+    ex=findFn(editId,activeMonth);
+  }
   if(ex){
-    if(editType==='expense') expensePayments=expensePayments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes}:p);
-    else incomePayments=incomePayments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes}:p);
+    if(editType==='expense') expensePayments=expensePayments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes,occurrenceIndex: occIdx!==null? occIdx : p.occurrenceIndex}:p);
+    else incomePayments=incomePayments.map(p=> p.id===ex.id? {...p,amount,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes,occurrenceIndex: occIdx!==null? occIdx : p.occurrenceIndex}:p);
   } else {
-    let newPay={id:uid(),templateId:editId,month:activeMonth,amount,paidAt:new Date().toISOString(),paid:false,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes};
+    let newPay={id:uid(),templateId:editId,month:activeMonth,amount,paidAt:new Date().toISOString(),paid:false,snapshotName:name,snapshotCategory:category,snapshotNotes:notes,notes,occurrenceIndex: occIdx};
     if(editType==='expense') expensePayments.push(newPay); else incomePayments.push(newPay);
   }
  } else if(scope==="forward"){
