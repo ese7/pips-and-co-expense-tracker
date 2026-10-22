@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Pips & Co Budget Tracker</title>
 <meta name="theme-color" content="#0f1115">
-<link rel="manifest" href="./manifest.json">
+<link rel="manifest" href="./manifest.json?v=59">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Expense Tracker">
-<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png">
-<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
-<link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=59">
+<link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=59">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=59">
+<link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png?v=59">
 <style>
 *{box-sizing:border-box}
 :root{--bg:#0f1115;--bg2:#171a21;--bg3:#21242e;--card:#181b22;--border:#e5e7eb;--border-dark:#252a36;--text:#f5f5f7;--muted:#9ca3af;--blue:#2563eb}
@@ -153,7 +153,6 @@ html.light .type-toggle button.expense.active{background:#dc2626}
 }
 /* Ensure gap between total tab and 2 tabs matches gap to period section (18px) */
 #totalsGrid{ gap:18px; margin-bottom:18px !important }
-
 /* Mobile calendar icon fix - same padding/color as dropdown arrows */
 .modal .input[type="date"]{
   background-image:url("data:image/svg+xml,[STRIPPED]) !important;
@@ -176,7 +175,6 @@ html.light .type-toggle button.expense.active{background:#dc2626}
 html.light .modal .input[type="date"]{
   background-image:url("data:image/svg+xml,[STRIPPED]) !important;
 }
-
 /* Fix dropdown arrow padding and calendar icon */
 .modal select.input{
   padding-right:42px !important;
@@ -192,7 +190,6 @@ html.light .modal .input[type="date"]{
 /* Remove duplicate native arrow on WebKit */
 .modal select.input::-webkit-inner-spin-button,
 .modal select.input::-webkit-outer-spin-button{appearance:none !important;}
-
 .modal .input[type="date"]{
   padding-right:42px !important;
   position:relative;
@@ -223,7 +220,6 @@ html.light .modal .input[type="date"]::-webkit-calendar-picker-indicator{
   .modal select.input{color-scheme:dark;}
 }
 .modal .input[type="date"]::-webkit-datetime-edit{padding-right:10px}
-
 </style>
 <script src="./firebase-config.js"></script>
 </head>
@@ -238,7 +234,7 @@ html.light .modal .input[type="date"]::-webkit-calendar-picker-indicator{
 </div>
 </div>
 <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
-<button id="syncBtn" class="btn btn-ghost" style="font-size:11px">☁ Sign in</button>
+<button id="syncBtn" class="btn btn-ghost" style="font-size:11px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:2px"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>Sign in to sync</button>
 <span id="syncStatus" style="font-size:10px;color:var(--muted);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
 <button id="themeBtn" class="theme-btn" aria-label="Toggle theme"></button>
 <button id="newBtn" class="btn btn-primary"><span style="font-size:14px;line-height:1">+</span> <span class="hide-mobile">New Expense</span><span class="show-mobile">New</span></button>
@@ -248,7 +244,7 @@ html.light .modal .input[type="date"]::-webkit-calendar-picker-indicator{
 <div class="menu-section">
 <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:8px">Cloud Sync</div>
 <div style="display:flex;flex-direction:column;gap:8px">
-<button id="syncBtnMobile" class="btn btn-ghost" style="width:100%;justify-content:center">☁ Sign in</button>
+<button id="syncBtnMobile" class="btn btn-ghost" style="width:100%;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:2px"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>Sign in to sync</button>
 <div id="syncStatusMobile" style="font-size:10px;color:var(--muted);text-align:center">Local only</div>
 <div id="syncDateMobile" style="font-size:9px;color:var(--muted);text-align:center;opacity:0.7"></div>
 </div>
@@ -265,7 +261,6 @@ html.light .modal .input[type="date"]::-webkit-calendar-picker-indicator{
 </div>
 </div></div>
 </header>
-
 <div class="container" style="padding-top:18px;padding-bottom:18px">
 <div class="row" style="align-items:flex-start">
 <aside><div class="card"><div class="pill">Categories</div><div id="catFilters" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"></div><div class="pill">Spending by Category</div><div id="pieWrap" style="text-align:center"></div><div id="pieLegend" style="margin-top:10px"></div><div style="border-top:1px solid var(--border-dark);margin-top:14px;padding-top:12px;display:flex;flex-direction:column;gap:7px"><div style="display:flex;gap:7px"><button id="exportBtn" class="btn btn-ghost" style="flex:1;font-size:10px;justify-content:center">Export JSON</button><button id="importBtn" class="btn btn-ghost" style="flex:1;font-size:10px;justify-content:center">Import JSON</button><input id="fileInput" type="file" accept=".json" style="display:none"></div><button id="clearBtn" class="btn btn-ghost" style="font-size:10px;justify-content:center">Clear All Data</button><div style="font-size:10px;color:var(--muted);line-height:1.4;margin-top:2px">Recurring items appear only for current month and forward.</div></div></div></aside>
@@ -276,15 +271,10 @@ html.light .modal .input[type="date"]::-webkit-calendar-picker-indicator{
 </main>
 </div>
 </div>
-
 <footer style="padding:18px 0;margin-top:18px;border-top:1px solid var(--border-dark)"><div class="container" style="text-align:center;font-size:11px;color:var(--muted)"><div style="font-style:italic;margin-bottom:6px">A simple, powerful recurring budget tracker</div>Built with <span style="color:#ef4444">♥</span> by <a href="https://sitestars.net/" target="_blank">Sitestars</a></div></footer>
-
 <div id="editBackdrop" class="modal-backdrop"><div class="modal"><h3 id="modalTitle" style="margin:0 0 3px 0;font-size:15px;font-weight:600">New Expense</h3><div style="display:grid;gap:18px"><div><label>Name</label><input id="f_name" class="input" placeholder="e.g. Rent, Groceries"></div><div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,0.9fr);gap:12px;min-width:0"><div style="min-width:0"><label>Amount</label><input id="f_amount" class="input" type="number" step="0.01" placeholder="0.00"></div><div style="min-width:0"><label>Currency</label><select id="f_currency" class="input"><option value="$">$ USD</option><option value="€">€ EUR</option><option value="£">£ GBP</option><option value="¥">¥ JPY</option><option value="₹">₹ INR</option><option value="A$">A$ AUD</option><option value="C$">C$ CAD</option><option value="₦">₦ NGN</option><option value="R">R ZAR</option><option value="custom">Custom</option></select><input id="f_currency_custom" class="input" placeholder="Custom symbol" style="display:none;margin-top:8px"></div></div><div><label id="f_due_label">Due date (optional)</label><input id="f_due" class="input" type="date"></div><div><label>Recurrence</label><select id="f_rec" class="input"><option value="none">None</option><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="biweekly">Bi-Weekly</option><option value="yearly">Yearly</option><option value="quarterly">Quarterly</option><option value="semiannually">Semi-annually</option></select></div><div><label>Category</label><select id="f_cat" class="input"></select><div style="display:flex;gap:8px;margin-top:10px"><input id="f_newcat" class="input" placeholder="New category" style="flex:1"><button id="addCatBtn" class="btn btn-ghost">Add</button></div></div><div><label>Notes (optional)</label><input id="f_notes" class="input" placeholder="Optional notes"></div></div><div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="cancelEdit" class="btn btn-ghost">Cancel</button><button id="saveEdit" class="btn btn-primary">Save</button></div></div></div>
-
 <div id="scopeBackdrop" class="modal-backdrop" style="z-index:60"><div class="modal" style="max-width:440px"><h3 style="margin:0 0 4px 0;font-size:15px;font-weight:600">Edit recurring</h3><div id="scopeDesc" style="font-size:11px;color:var(--muted)"></div><div style="margin-top:10px"><div class="scope-opt selected" data-scope="single"><div class="dot"></div><div><div class="scope-title">This single entry</div><div class="scope-desc">Only this entry will be changed.</div></div></div><div class="scope-opt" data-scope="forward"><div class="dot"></div><div><div class="scope-title">Current entry going forward</div><div class="scope-desc">This and all future entries will use the new values.</div></div></div><div class="scope-opt" data-scope="all"><div class="dot"></div><div><div class="scope-title">All entries</div><div class="scope-desc">Every occurrence in the series will be updated.</div></div></div></div><div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="scopeCancel" class="btn btn-ghost">Cancel</button><button id="scopeApply" class="btn btn-primary">Apply</button></div></div></div>
-
 <div id="deleteScopeBackdrop" class="modal-backdrop" style="z-index:60"><div class="modal" style="max-width:440px"><h3 style="margin:0 0 4px 0;font-size:15px;font-weight:600">Delete recurring</h3><div id="deleteScopeDesc" style="font-size:11px;color:var(--muted)"></div><div style="margin-top:10px"><div class="scope-opt selected" data-scope="single"><div class="dot"></div><div><div class="scope-title">This single entry</div><div class="scope-desc">Only this entry will be deleted.</div></div></div><div class="scope-opt" data-scope="forward"><div class="dot"></div><div><div class="scope-title">Current and going forward</div><div class="scope-desc">This and all future entries will be deleted.</div></div></div><div class="scope-opt" data-scope="all"><div class="dot"></div><div><div class="scope-title">All entries</div><div class="scope-desc">Every occurrence in the series will be deleted.</div></div></div></div><div style="display:flex;justify-content:flex-end;gap:7px;margin-top:16px"><button id="deleteScopeCancel" class="btn btn-ghost">Cancel</button><button id="deleteScopeApply" class="btn btn-primary" style="background:#ef4444;border-color:#ef4444">Delete</button></div></div></div>
-
 <script>
 const LOGO_DARK = "./logo-white.png";
 const LOGO_LIGHT = "./logo-black.png";
@@ -304,7 +294,6 @@ const labelM=(s)=>{try{let {y,m}=parseM(s);return new Date(y,m,1).toLocaleDateSt
 const dim=(y,m)=>new Date(y,m+1,0).getDate();
 const parseD=(s)=>{let [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
 const today0=()=>{let d=new Date();d.setHours(0,0,0,0);return d};
-
 function load(){
   try{
     let r=localStorage.getItem(STORAGE_KEY);
@@ -313,17 +302,14 @@ function load(){
   }catch{} return null;
 }
 let data=load();
-
 // Expense data (backward compat)
 let expenseTemplates=data?.expenseTemplates||data?.templates||[];
 let expensePayments=data?.expensePayments||data?.payments||[];
 let expenseCats=(()=>{if(data?.expenseCategories?.length) return data.expenseCategories; if(data?.categories?.length){let s=new Set(data.categories); DEFAULT_EXPENSE_CATS.forEach(c=>s.add(c)); return Array.from(s);} return DEFAULT_EXPENSE_CATS.slice()})();
-
 // Income data
 let incomeTemplates=data?.incomeTemplates||[];
 let incomePayments=data?.incomePayments||[];
 let incomeCats=data?.incomeCategories?.length? data.incomeCategories : DEFAULT_INCOME_CATS.slice();
-
 // Cleanup orphaned/deleted ghost payments that cause persisted amounts
 try{
   let before = expensePayments.length + incomePayments.length;
@@ -340,16 +326,12 @@ try{
     console.log('Cleaned orphaned payments', before - (expensePayments.length+incomePayments.length));
   }
 }catch(e){ console.error('cleanup error', e); }
-
-
 let isDark=(()=>{if(data && typeof data.isDark==="boolean") return data.isDark; try{let v=localStorage.getItem("pips_expense_dark_mode"); if(v!==null) return JSON.parse(v)}catch{} try{return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches}catch{return true}})();
 let activeMonth=curM();
 let activeType='expense'; // expense | income
 let filterCatExpense=null, filterCatIncome=null;
 let editId=null, pendingEdit=null, selectedScope="single", editType='expense';
-
 const el={totalsGrid:document.getElementById("totalsGrid"),catFilters:document.getElementById("catFilters"),pieWrap:document.getElementById("pieWrap"),pieLegend:document.getElementById("pieLegend"),monthTitle:document.getElementById("monthTitle"),jumpNow:document.getElementById("jumpNow"),mainContent:document.getElementById("mainContent"),prevBtn:document.getElementById("prevBtn"),nextBtn:document.getElementById("nextBtn"),themeBtn:document.getElementById("themeBtn"),logoImg:document.getElementById("logoImg"),expenseTabBtn:document.getElementById("expenseTabBtn"),incomeTabBtn:document.getElementById("incomeTabBtn"),newBtn:document.getElementById("newBtn")};
-
 function save(){
   try{
     localStorage.setItem(STORAGE_KEY,JSON.stringify({
@@ -360,11 +342,9 @@ function save(){
     }));
   }catch{}
 }
-
 function sunIcon(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>`}
 function moonIcon(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`}
 function applyTheme(){document.documentElement.classList.toggle("light",!isDark); el.themeBtn.innerHTML=isDark? sunIcon(): moonIcon(); el.logoImg.src=isDark? LOGO_DARK : LOGO_LIGHT; renderAll();}
-
 function findPayExpense(tid,m){return expensePayments.find(p=>p.templateId===tid && p.month===m && !p.deleted)}
 function findPayIncome(tid,m){return incomePayments.find(p=>p.templateId===tid && p.month===m && !p.deleted)}
 function findPay(tid,m){return activeType==='expense'? findPayExpense(tid,m): findPayIncome(tid,m)}
@@ -374,7 +354,6 @@ function dispAmt(tpl,m){return activeType==='expense'? dispAmtExpense(tpl,m): di
 function isPaidExpense(tid,m){let p=findPayExpense(tid,m); return p? p.paid!==false : false}
 function isPaidIncome(tid,m){let p=findPayIncome(tid,m); return p? p.paid!==false : false}
 function isPaid(tid,m){return activeType==='expense'? isPaidExpense(tid,m): isPaidIncome(tid,m)}
-
 function getDue(tpl,mStr){
   if(tpl.deletedFromMonth && mStr >= tpl.deletedFromMonth) return null;
   if(!tpl.dueDate) return null;
@@ -429,7 +408,6 @@ function getDue(tpl,mStr){
   }
   return [mkDate(due.getDate())];
 }
-
 function earliest(){
   let ms=[...expensePayments.map(p=>p.month), ...incomePayments.map(p=>p.month)].filter(Boolean)
     .concat(expenseTemplates.map(t=>t.createdAt?.slice(0,7)).filter(Boolean))
@@ -440,7 +418,6 @@ function earliest(){
   return ms.reduce((a,b)=>a<b?a:b,ms[0]);
 }
 function latest(){return addM(curM(),12)}
-
 function computeMonthData(templates, payments, filterCat){
   let dated=[], nodue=[], archive=[];
   let filtered=filterCat? templates.filter(t=>t.category===filterCat): templates;
@@ -487,9 +464,7 @@ function computeMonthData(templates, payments, filterCat){
   let unpaid=total-paid;
   return {dated,nodue,archive,total,paid,unpaid,paidNodue};
 }
-
 let cachedExpenseData=null, cachedIncomeData=null;
-
 function renderTotals(){
   cachedExpenseData=computeMonthData(expenseTemplates, expensePayments, filterCatExpense);
   cachedIncomeData=computeMonthData(incomeTemplates, incomePayments, filterCatIncome);
@@ -510,7 +485,6 @@ function renderTotals(){
   }
   return activeType==='expense'? exp: inc;
 }
-
 function renderCats(){
   el.catFilters.innerHTML="";
   let cats = activeType==='expense'? expenseCats : incomeCats;
@@ -531,7 +505,6 @@ function renderCats(){
   sel.innerHTML="";
   cats.forEach(c=>{let o=document.createElement("option"); o.value=c; o.textContent=c; sel.appendChild(o);});
 }
-
 function renderPie(dated,nodue,archive){
   let entries=[];
   dated.forEach(x=>{let cat=x.tpl? x.tpl.category : x.cat; entries.push({cat,amt:x.amt});});
@@ -563,11 +536,9 @@ function renderPie(dated,nodue,archive){
   el.pieWrap.innerHTML=svg;
   el.pieLegend.innerHTML=data.map(d=>`<div class="pie-legend"><div style="display:flex;gap:7px;align-items:center"><span style="width:9px;height:9px;border-radius:50%;background:${d.color};display:inline-block"></span><span style="font-weight:500">${d.cat}</span></div><div><span style="color:var(--muted)">$${d.amt.toFixed(0)}</span> <span style="font-weight:600;margin-left:5px">${d.pct.toFixed(0)}%</span></div></div>`).join("")+`<div style="border-top:1px solid var(--border-dark);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-size:10px;font-weight:700"><span>Total</span><span>$${total.toFixed(2)}</span></div>`;
 }
-
 function iconPencil(){return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="M15 5l4 4"/></svg>`}
 function iconTrash(){return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`}
 function iconCal(){return `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`}
-
 function rowHtml({tpl,due,paid,amt,dueSoon,overdue,isOutstanding,currency,occurrenceIndex}){
  let cls="item"+(paid?" paid":"")+(overdue&&!paid?" overdue":"")+(dueSoon&&!paid?" duesoon":"");
  let dueLabel=due? `${due.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"}).replace(',','')} • ${tpl.recurrence}` : `No due date${tpl.recurrence!=="none"?` • ${tpl.recurrence}`:""}`;
@@ -576,7 +547,6 @@ function rowHtml({tpl,due,paid,amt,dueSoon,overdue,isOutstanding,currency,occurr
  let curSym = currency || tpl.currency || '$';
  return `<div class="${cls}"><div class="circle ${paid?"checked":""}" data-toggle="${tpl.id}" data-occ="${occurrenceIndex!=null?occurrenceIndex:''}">${paid?"✓":""}</div><div style="flex:1;min-width:0"><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap"><span style="font-weight:600;font-size:12px;${paid?"text-decoration:line-through;opacity:.7":""}">${tpl.name}</span>${badges}</div><div style="font-size:10px;color:var(--muted);display:flex;gap:4px;align-items:center;margin-top:2px">${iconCal()} ${dueLabel}</div></div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0"><span style="font-weight:600;font-size:12px;${paid?"text-decoration:line-through;opacity:.7":(isOutstanding?"color:#f59e0b":"")}">${curSym}${amt.toFixed(2)}</span><button class="icon-btn" data-edit="${tpl.id}" data-occ="${occurrenceIndex!=null?occurrenceIndex:''}">${iconPencil()}</button><button class="icon-btn" data-del="${tpl.id}" data-occ="${occurrenceIndex!=null?occurrenceIndex:''}">${iconTrash()}</button></div></div>`;
 }
-
 function renderMain(){
  let {dated,nodue,archive}=renderTotals();
  let main=document.getElementById("mainContent");
@@ -616,7 +586,6 @@ function renderMain(){
  main.querySelectorAll("[data-edit]").forEach(b=>{b.onclick=()=>{openEdit(b.dataset.edit, b.dataset.occ!==''?parseInt(b.dataset.occ):null)}});
  main.querySelectorAll("[data-del]").forEach(b=>{b.onclick=()=>{deleteTpl(b.dataset.del, b.dataset.occ!==''?parseInt(b.dataset.occ):null)}});
 }
-
 function renderAll(){
   let {dated,nodue,archive}=renderTotals();
   renderCats();
@@ -631,7 +600,6 @@ function renderAll(){
   // Update new button label
   el.newBtn.innerHTML=`<span style="font-size:14px;line-height:1">+</span> <span class="hide-mobile">New ${activeType==='expense'?'Expense':'Income'}</span><span class="show-mobile">New</span>`;
 }
-
 function togglePaid(tid, occIdx){
   let templates = activeType==='expense'? expenseTemplates : incomeTemplates;
   let tpl=templates.find(t=>t.id===tid);
@@ -663,7 +631,6 @@ function togglePaid(tid, occIdx){
   }
   save(); renderAll();
 }
-
 let pendingDeleteId=null, pendingDeleteType='expense', deleteScope='all', pendingDeleteOccurrence=null;
 function deleteTpl(id, occIdx){
   let templates = activeType==='expense'? expenseTemplates : incomeTemplates;
@@ -744,7 +711,6 @@ function commitDelete(scope){
   }
   pendingDeleteId=null; pendingDeleteOccurrence=null;
 }
-
 let editOccurrenceIndex=null;
 let originalData=null;
 function openNew(){
@@ -769,7 +735,6 @@ function openNew(){
   document.getElementById("editBackdrop").classList.add("open");
   let saveBtn=document.getElementById("saveEdit"); saveBtn.disabled=false; saveBtn.style.opacity="1"; saveBtn.style.cursor="pointer";
 }
-
 function openEdit(id, occIdx){
   let templates = activeType==='expense'? expenseTemplates : incomeTemplates;
   let payments = activeType==='expense'? expensePayments : incomePayments;
@@ -811,7 +776,6 @@ function openEdit(id, occIdx){
   document.getElementById("editBackdrop").classList.add("open");
   setTimeout(()=>{ captureOriginalData(); checkIfChanged(); }, 50);
 }
-
 function commitSave(data,scope){
  let {name,amount,dueDate,recurrence,category,notes,currency}=data;
  let templates = editType==='expense'? expenseTemplates : incomeTemplates;
@@ -865,7 +829,6 @@ function commitSave(data,scope){
   }
  }
 }
-
 document.getElementById("newBtn").onclick=openNew;
 document.getElementById("themeBtn").onclick=()=>{isDark=!isDark; save(); applyTheme();};
 document.getElementById("prevBtn").onclick=()=>{if(activeMonth>earliest()){activeMonth=addM(activeMonth,-1); renderAll();}};
@@ -993,7 +956,6 @@ if(fCurrEl){ fCurrEl.addEventListener('change', function(){ let custom=document.
   let el=document.getElementById(id);
   if(el){ el.addEventListener('input', checkIfChanged); el.addEventListener('change', checkIfChanged); }
 });
-
 document.getElementById("exportBtn").onclick=()=>{
   try{
     let blob=new Blob([JSON.stringify({expenseTemplates,expensePayments,expenseCategories:expenseCats,incomeTemplates,incomePayments,incomeCategories:incomeCats,isDark,version:11,exportedAt:new Date().toISOString()},null,2)],{type:"application/json"});
@@ -1024,7 +986,6 @@ document.getElementById("clearBtn").onclick=()=>{
   incomeTemplates=[]; incomePayments=[]; incomeCats=DEFAULT_INCOME_CATS.slice();
   isDark=true; activeMonth=curM(); save(); applyTheme();
 };
-
 // Type toggle
 el.expenseTabBtn.onclick=()=>{
   activeType='expense';
@@ -1040,13 +1001,11 @@ el.incomeTabBtn.onclick=()=>{
   filterCatIncome=null;
   renderAll();
 };
-
 applyTheme();
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{ navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
 }
 </script>
-
 <div id="faceIdOverlay" class="faceid-overlay">
   <div class="faceid-icon">⌾</div>
   <div>
@@ -1056,7 +1015,6 @@ if('serviceWorker' in navigator){
   <button id="faceIdUnlockBtn" class="btn btn-primary" style="margin-top:8px">Unlock with Face ID</button>
   <button id="faceIdDisableBtn" class="btn btn-ghost" style="font-size:11px">Disable Face ID lock</button>
 </div>
-
 <script>
 // Disable logo link in PWA only
 (function(){
@@ -1078,7 +1036,6 @@ if('serviceWorker' in navigator){
   document.addEventListener('DOMContentLoaded', disableLogoLink);
   if(isPWA()){ document.documentElement.classList.add('pwa'); }
 })();
-
 // Hamburger menu logic
 document.addEventListener('DOMContentLoaded', function(){
   const menuBtn=document.getElementById('menuBtn');
@@ -1117,12 +1074,10 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 });
 </script>
-
 <script type="module">
 // Firebase - updated for income/expense
 let userDocRef=null, cloudReady=false, suppressCloud=false;
 let auth=null, db=null;
-
 async function initFirebase(){
   try{
     if(!window.FIREBASE_CONFIG){ console.log('No firebase config'); return; }
@@ -1228,7 +1183,7 @@ async function initFirebase(){
         }catch(e){ console.error(e); if(syncStatus) syncStatus.textContent="Sync error: "+(e.code||e.message); cloudReady=true; }
       } else {
         userDocRef=null; cloudReady=false;
-        if(syncBtn) syncBtn.textContent="☁ Sign in";
+        if(syncBtn) syncBtn.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:2px"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>Sign in to sync`;
         if(syncStatus) syncStatus.textContent="Local only";
         if(syncStatusMobile) syncStatusMobile.textContent="Local only";
         if(syncDateMobile) syncDateMobile.textContent="";
@@ -1238,7 +1193,6 @@ async function initFirebase(){
 }
 initFirebase();
 </script>
-
 <script>
 // Face ID Lock
 (function(){
@@ -1296,6 +1250,5 @@ initFirebase();
   if(disableBtn){ disableBtn.addEventListener('click', ()=>{ localStorage.removeItem(FACEID_KEY); localStorage.removeItem(FACEID_CRED_KEY); if(toggle) toggle.checked=false; overlay.classList.remove('open'); }); }
 })();
 </script>
-
 </body>
 </html>
